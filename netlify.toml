@@ -1,0 +1,6 @@
+# Deploy the Clarity app from the repo.
+# In Netlify: connect this repo, leave the build command blank,
+# and set the publish directory to "app".
+[build]
+  publish = "app"
+  command = ""
