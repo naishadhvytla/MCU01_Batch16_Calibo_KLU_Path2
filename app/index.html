@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clarity — Data Analysis Platform</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect width='96' height='96' rx='22' fill='%230F6E78'/><g fill='white'><rect x='26' y='52' width='9' height='22' rx='2.5'/><rect x='43.5' y='40' width='9' height='34' rx='2.5' opacity='.92'/><rect x='61' y='28' width='9' height='46' rx='2.5' opacity='.82'/></g><circle cx='65.5' cy='30.5' r='6.5' fill='%230F6E78' stroke='white' stroke-width='3'/></svg>">
+<link rel="apple-touch-icon" href="logo/png/apple-touch-icon.png">
+<meta name="theme-color" content="#0F6E78">
+<meta name="description" content="Clarity — upload a dataset and get transparent cleaning, exploratory analysis, visual insights and a complete report in one workflow.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --paper:#FBFBFA; --surface:#FFFFFF; --surface-2:#F4F4F2; --line:#E5E5E2; --line-strong:#D6D6D2;
+  --ink:#1A1A19; --muted:#6E6E69; --faint:#9A9A94;
+  --accent:#0F6E78; --accent-ink:#0B5259; --accent-wash:#E7F1F2;
+  --green:#2F7A55; --green-wash:#E7F1EB; --amber:#9A6B12; --amber-wash:#F6EEDD;
+  --red:#B23A2E; --red-wash:#F6E7E4; --crit:#7E2A22;
+  --radius:7px; --radius-sm:5px;
+  --shadow:0 1px 2px rgba(20,20,19,.05),0 1px 1px rgba(20,20,19,.04);
+  --num:'IBM Plex Mono',ui-monospace,monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-.01em}
+a{color:var(--accent);text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+.num{font-family:var(--num);font-variant-numeric:tabular-nums}
+.mut{color:var(--muted)}
+.faint{color:var(--faint)}
+::selection{background:var(--accent-wash)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);
+  padding:8px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;transition:background .12s,border-color .12s}
+.btn:hover{background:var(--surface-2)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-ink)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-ghost{border-color:transparent;background:transparent}
+.btn-ghost:hover{background:var(--surface-2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8}
+
+/* ---------- LANDING ---------- */
+#landing{min-height:100vh;display:flex;flex-direction:column}
+.land-top{display:flex;align-items:center;justify-content:space-between;padding:20px 34px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;letter-spacing:-.02em}
+.brand .mark{width:24px;height:24px;flex:none;display:block}
+.brand .mark svg{width:100%;height:100%;display:block}
+.land-hero{flex:1;display:flex;flex-direction:column;justify-content:center;max-width:1080px;margin:0 auto;width:100%;padding:56px 34px}
+.land-hero h1{font-size:40px;line-height:1.08;max-width:15ch;letter-spacing:-.025em}
+.land-hero p.sub{font-size:17px;color:var(--muted);max-width:56ch;margin-top:20px;line-height:1.55}
+.land-cta{display:flex;gap:12px;margin-top:32px}
+.land-cta .btn{padding:11px 20px;font-size:14px}
+.preview{margin-top:56px;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:0 12px 40px -22px rgba(20,20,19,.35);overflow:hidden}
+.preview-bar{height:38px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:7px;padding:0 14px;background:var(--surface-2)}
+.preview-bar i{width:10px;height:10px;border-radius:50%;background:var(--line-strong);display:block}
+.preview-body{display:grid;grid-template-columns:180px 1fr;min-height:300px}
+.pv-side{border-right:1px solid var(--line);padding:16px 12px;background:var(--paper)}
+.pv-side .row{height:26px;border-radius:5px;margin-bottom:5px;display:flex;align-items:center;padding:0 9px;font-size:12px;color:var(--muted)}
+.pv-side .row.on{background:var(--accent-wash);color:var(--accent-ink);font-weight:600}
+.pv-main{padding:20px}
+.pv-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.pv-kpi{border:1px solid var(--line);border-radius:6px;padding:11px 13px}
+.pv-kpi .n{font-family:var(--num);font-size:19px;font-weight:600}
+.pv-kpi .l{font-size:11px;color:var(--muted);margin-top:2px}
+.pv-chart{height:120px;border:1px solid var(--line);border-radius:6px;display:flex;align-items:flex-end;gap:5px;padding:14px}
+.pv-chart span{flex:1;background:linear-gradient(var(--accent),var(--accent-wash));border-radius:2px 2px 0 0;opacity:.9}
+.land-foot{padding:22px 34px;border-top:1px solid var(--line);color:var(--faint);font-size:12.5px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+
+/* ---------- APP SHELL ---------- */
+#app{display:none;min-height:100vh}
+.shell{display:grid;grid-template-columns:224px 1fr;min-height:100vh}
+.side{border-right:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.side-top{padding:18px 16px;border-bottom:1px solid var(--line)}
+.nav{padding:12px 10px;flex:1;overflow:auto}
+.nav-label{font-size:11px;color:var(--faint);font-weight:600;padding:10px 10px 5px;letter-spacing:.04em}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);color:var(--ink);font-size:13.5px;font-weight:500;margin-bottom:1px}
+.nav a:hover{background:var(--surface-2)}
+.nav a.active{background:var(--accent-wash);color:var(--accent-ink);font-weight:600}
+.nav a svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;flex:none;opacity:.85}
+.nav a .badge{margin-left:auto;font-family:var(--num);font-size:11px;background:var(--surface-2);color:var(--muted);padding:1px 6px;border-radius:20px;border:1px solid var(--line)}
+.nav a.active .badge{background:#fff;color:var(--accent-ink);border-color:var(--accent-wash)}
+.side-foot{border-top:1px solid var(--line);padding:12px 14px;font-size:12px;color:var(--muted)}
+.side-foot .bar{height:5px;border-radius:3px;background:var(--surface-2);margin:7px 0;overflow:hidden}
+.side-foot .bar i{display:block;height:100%;background:var(--accent);border-radius:3px}
+
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(251,251,250,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:14px 26px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.crumbs{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:7px}
+.crumbs b{color:var(--ink);font-weight:600}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.view{padding:26px;max-width:1180px;width:100%}
+.view-head{margin-bottom:20px}
+.view-head h2{font-size:22px;letter-spacing:-.02em}
+.view-head p{color:var(--muted);margin-top:5px;max-width:70ch}
+
+/* cards / panels */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.panel-h{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.panel-h h3{font-size:14.5px}
+.panel-h .desc{font-size:12.5px;color:var(--muted);margin-top:2px;font-weight:400}
+.panel-b{padding:16px}
+.grid{display:grid;gap:16px}
+.mb{margin-bottom:16px}
+
+/* KPI strip */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface);box-shadow:var(--shadow)}
+.kpi{padding:15px 16px;border-right:1px solid var(--line)}
+.kpi:last-child{border-right:none}
+.kpi .n{font-family:var(--num);font-size:22px;font-weight:600;letter-spacing:-.01em}
+.kpi .l{font-size:12px;color:var(--muted);margin-top:3px}
+.kpi .n.small{font-size:17px}
+
+/* quality score */
+.qscore{display:flex;align-items:center;gap:20px}
+.dial{--v:0;--c:var(--green);width:96px;height:96px;border-radius:50%;flex:none;
+  background:conic-gradient(var(--c) calc(var(--v)*1%),var(--surface-2) 0);display:grid;place-items:center;position:relative}
+.dial::after{content:"";position:absolute;inset:9px;border-radius:50%;background:var(--surface);border:1px solid var(--line)}
+.dial .v{position:relative;z-index:1;font-family:var(--num);font-size:24px;font-weight:600}
+.qbreak{flex:1;min-width:0}
+.qrow{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:13px;border-bottom:1px dashed var(--line)}
+.qrow:last-child{border-bottom:none}
+.qrow .t{flex:1;color:var(--muted)}
+.qrow .p{font-family:var(--num);font-weight:600}
+.qrow .p.neg{color:var(--red)}
+.qrow .p.ok{color:var(--green)}
+
+/* tables */
+.tbl-wrap{overflow:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+table.dt{border-collapse:collapse;width:100%;font-size:13px}
+table.dt th,table.dt td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+table.dt thead th{position:sticky;top:0;background:var(--surface-2);z-index:2;font-weight:600;font-size:12px;color:var(--ink);border-bottom:1px solid var(--line-strong);cursor:pointer;user-select:none}
+table.dt thead th .ty{font-family:var(--num);font-size:10px;color:var(--faint);font-weight:500;display:block;margin-top:1px}
+table.dt tbody tr:hover{background:var(--surface-2)}
+table.dt td.n{font-family:var(--num);text-align:right}
+table.dt td.miss{background:var(--red-wash);color:var(--red);font-style:italic}
+table.dt td.miss::before{content:"—"}
+.sortable::after{content:"";display:inline-block;width:0;height:0;margin-left:5px;vertical-align:middle}
+th.sort-asc::after{border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:5px solid var(--muted)}
+th.sort-desc::after{border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid var(--muted)}
+
+/* type pill */
+.ty-pill{display:inline-block;font-family:var(--num);font-size:10.5px;font-weight:500;padding:1px 6px;border-radius:4px;border:1px solid var(--line-strong);background:var(--surface-2);color:var(--muted)}
+.ty-pill.num{color:var(--accent-ink);background:var(--accent-wash);border-color:var(--accent-wash)}
+.ty-pill.cat{color:#7A5B18;background:#F6EEDD;border-color:#EADFC4}
+.ty-pill.date{color:#4A5568;background:#EDF0F4;border-color:#DFE4EA}
+.ty-pill.bool{color:#5A4A7A;background:#EEEAF4;border-color:#E1D9EE}
+
+/* severity */
+.sev{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600}
+.sev::before{content:"";width:8px;height:8px;border-radius:2px;flex:none}
+.sev.low{color:var(--muted)} .sev.low::before{background:var(--faint)}
+.sev.medium{color:var(--amber)} .sev.medium::before{background:var(--amber)}
+.sev.high{color:var(--red)} .sev.high::before{background:var(--red)}
+.sev.critical{color:var(--crit)} .sev.critical::before{background:var(--crit)}
+
+/* issue rows */
+.issue{border:1px solid var(--line);border-radius:var(--radius);margin-bottom:10px;background:var(--surface)}
+.issue-h{display:flex;align-items:center;gap:14px;padding:12px 15px;cursor:pointer}
+.issue-h .ti{flex:1}
+.issue-h .ti .name{font-weight:600;font-size:13.5px}
+.issue-h .ti .col{font-size:12px;color:var(--muted);font-family:var(--num)}
+.issue-h .cnt{font-family:var(--num);font-weight:600;font-size:13px}
+.issue-b{border-top:1px solid var(--line);padding:14px 15px;display:none;background:var(--paper);border-radius:0 0 var(--radius) var(--radius)}
+.issue.open .issue-b{display:block}
+.issue-b .field{display:grid;grid-template-columns:130px 1fr;gap:6px 14px;font-size:13px;margin-bottom:12px}
+.issue-b .field dt{color:var(--muted)}
+.issue-b .field dd{margin:0;font-weight:500}
+.chev{transition:transform .15s;color:var(--faint)}
+.issue.open .chev{transform:rotate(90deg)}
+
+/* chart card grid */
+.eda-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.chart-card .panel-b{padding:12px}
+.chart-box{position:relative;height:200px}
+.stat-mini{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;font-size:11.5px}
+.stat-mini div{background:var(--surface-2);border-radius:5px;padding:6px 8px}
+.stat-mini .sn{font-family:var(--num);font-weight:600;font-size:13px;display:block}
+.stat-mini .sl{color:var(--muted);font-size:10.5px}
+
+/* correlation heatmap */
+.heat{overflow:auto}
+.heat table{border-collapse:collapse;font-size:11px}
+.heat th{padding:5px 7px;font-weight:500;color:var(--muted);font-family:var(--num);white-space:nowrap}
+.heat th.rowh{text-align:right;position:sticky;left:0;background:var(--surface)}
+.heat td{width:44px;height:34px;text-align:center;font-family:var(--num);font-weight:600;color:#fff;font-size:11px;border:1px solid var(--surface)}
+
+/* insights */
+.insight{display:flex;gap:13px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--radius);margin-bottom:10px;background:var(--surface)}
+.insight .ic{width:30px;height:30px;border-radius:7px;flex:none;display:grid;place-items:center;background:var(--accent-wash);color:var(--accent-ink)}
+.insight .ic svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8}
+.insight .bd{flex:1}
+.insight .bd .tx{font-size:13.5px;line-height:1.5}
+.insight .bd .ev{font-size:11.5px;color:var(--muted);font-family:var(--num);margin-top:5px}
+.insight.none .ic{background:var(--surface-2);color:var(--faint)}
+
+/* missing bars */
+.mbar-row{display:grid;grid-template-columns:150px 1fr 56px;align-items:center;gap:12px;padding:6px 0;font-size:13px}
+.mbar-row .track{height:9px;background:var(--surface-2);border-radius:5px;overflow:hidden}
+.mbar-row .track i{display:block;height:100%;background:var(--red);border-radius:5px}
+.mbar-row .pct{font-family:var(--num);text-align:right;font-weight:600}
+.mbar-row .nm{font-family:var(--num);font-size:12px;overflow:hidden;text-overflow:ellipsis}
+
+/* log */
+.log-item{display:grid;grid-template-columns:64px 1fr;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:13px}
+.log-item:last-child{border-bottom:none}
+.log-item .tm{font-family:var(--num);color:var(--faint);font-size:11.5px}
+.log-item .undo{margin-left:8px;font-size:11px;color:var(--accent);cursor:pointer}
+
+/* report */
+.report{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:40px 46px;max-width:820px;box-shadow:var(--shadow)}
+.report h1{font-size:26px;letter-spacing:-.02em}
+.report h2{font-size:17px;margin:26px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.report h3{font-size:14px;margin:16px 0 6px}
+.report p,.report li{font-size:13.5px;line-height:1.62;color:#2c2c2a}
+.report .meta{color:var(--muted);font-size:12.5px;margin-top:6px}
+.report ul{padding-left:20px;margin:8px 0}
+.report table{border-collapse:collapse;width:100%;font-size:12.5px;margin:10px 0}
+.report table td,.report table th{border:1px solid var(--line);padding:6px 10px;text-align:left}
+.report table th{background:var(--surface-2)}
+
+/* dropzone */
+.dz{border:1.5px dashed var(--line-strong);border-radius:10px;background:var(--surface);padding:44px 28px;text-align:center;transition:border-color .15s,background .15s}
+.dz.drag{border-color:var(--accent);background:var(--accent-wash)}
+.dz .big{font-size:16px;font-weight:600;margin-bottom:6px}
+.dz .fmt{font-family:var(--num);font-size:12px;color:var(--faint);margin:12px 0 18px}
+.dz-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* ingestion */
+.ingest{margin-top:18px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:16px 18px;font-family:var(--num);font-size:13px}
+.ingest .st{display:flex;align-items:center;gap:9px;padding:4px 0;color:var(--muted)}
+.ingest .st.done{color:var(--green)} .ingest .st.active{color:var(--ink)}
+.ingest .st .dot{width:14px;height:14px;border-radius:50%;border:2px solid currentColor;flex:none;display:grid;place-items:center}
+.ingest .st.done .dot{background:var(--green);border-color:var(--green)}
+.ingest .st.done .dot::after{content:"✓";color:#fff;font-size:9px;font-family:var(--sans)}
+.ingest .st.active .dot{border-color:var(--accent);animation:spin 1s linear infinite;border-right-color:transparent}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(20,20,19,.4);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal-bg.on{display:flex}
+.modal{background:var(--surface);border-radius:10px;max-width:560px;width:100%;box-shadow:0 20px 60px -20px rgba(0,0,0,.4);max-height:85vh;overflow:auto}
+.modal-h{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.modal-b{padding:20px}
+.modal-f{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.x{border:none;background:none;font-size:20px;color:var(--muted);line-height:1;padding:2px 6px}
+.field-row{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.field-row label{font-size:12.5px;font-weight:600;color:var(--muted)}
+select,input[type=text]{font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink);width:100%}
+.preview-box{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:12px;font-family:var(--num);font-size:12px;margin-top:8px}
+.preview-box .ln{display:flex;justify-content:space-between;padding:2px 0}
+.preview-box .ln .b{color:var(--red)} .preview-box .ln .a{color:var(--green)}
+
+/* toast */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:8px;font-size:13px;opacity:0;transition:.25s;z-index:200;pointer-events:none;box-shadow:0 8px 24px -8px rgba(0,0,0,.4)}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty .big{font-size:16px;font-weight:600;color:var(--ink);margin-bottom:8px}
+.hint{font-size:11.5px;color:var(--faint);cursor:help;border-bottom:1px dotted var(--faint)}
+.spread{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:11.5px;padding:3px 9px;border-radius:20px;border:1px solid var(--line-strong);background:var(--surface);color:var(--muted);cursor:pointer}
+.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}
+  .side{position:fixed;left:-240px;z-index:60;transition:left .2s;width:224px}
+  .side.open{left:0}
+  .menu-btn{display:inline-flex!important}
+  .land-hero h1{font-size:30px}
+}
+.menu-btn{display:none}
+/* ---------- VISUAL REPORT ---------- */
+.visual-report{display:flex;flex-direction:column;gap:16px;margin-bottom:18px}
+.vr-hero{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}
+.vr-title{font-size:20px;font-weight:600;letter-spacing:-.02em}
+.vr-sub{color:var(--muted);font-size:12.5px;margin-top:4px}
+.vr-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.vr-kpi{border:1px solid var(--line);border-radius:7px;padding:13px;background:var(--surface)}
+.vr-kpi .v{font-family:var(--num);font-size:21px;font-weight:600}
+.vr-kpi .l{font-size:11px;color:var(--muted);margin-top:2px}
+.vr-chart{border:1px solid var(--line);border-radius:7px;background:var(--surface);padding:14px;min-width:0}
+.vr-chart h3{font-size:13px;margin-bottom:2px}.vr-chart p{font-size:11.5px;color:var(--muted);margin:0 0 10px}
+.vr-chart svg{width:100%;height:auto;display:block;overflow:visible}
+.vr-quality{display:flex;align-items:center;gap:16px;min-height:180px}
+.vr-ring{width:112px;height:112px;border-radius:50%;display:grid;place-items:center;flex:none;position:relative}
+.vr-ring::after{content:"";position:absolute;inset:11px;border-radius:50%;background:var(--surface)}
+.vr-ring b{position:relative;z-index:1;font-family:var(--num);font-size:27px}
+.vr-quality-copy{font-size:12px;color:var(--muted);line-height:1.55}.vr-quality-copy strong{color:var(--ink)}
+.vr-findings{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.vr-finding{border:1px solid var(--line);border-radius:7px;padding:12px;background:var(--surface)}
+.vr-finding .tag{font-size:10px;font-family:var(--num);color:var(--accent-ink);background:var(--accent-wash);padding:3px 6px;border-radius:4px;display:inline-block;margin-bottom:7px}
+.vr-finding .tx{font-size:12.5px;line-height:1.5}.vr-finding .ev{font-family:var(--num);font-size:10.5px;color:var(--muted);margin-top:5px}
+@media(max-width:860px){.vr-hero{grid-template-columns:1fr}.vr-kpis{grid-template-columns:repeat(2,1fr)}.vr-findings{grid-template-columns:1fr}}
+@media print{
+  .side,.topbar,.no-print{display:none!important}
+  .shell{grid-template-columns:1fr}
+  .report{border:none;box-shadow:none;padding:0;max-width:none}
+  .view{padding:0}
+}
+
+/* auth */
+#setup,#auth{min-height:100vh;display:none;place-items:center;padding:30px}
+#setup.on,#auth.on{display:grid}
+.auth-card{width:100%;max-width:400px}
+.auth-card .brand{justify-content:center;margin-bottom:22px;font-size:17px}
+.auth-tabs{display:flex;gap:4px;background:var(--surface-2);border-radius:8px;padding:4px;margin-bottom:18px}
+.auth-tabs button{flex:1;border:none;background:none;padding:8px;border-radius:6px;font-size:13px;font-weight:600;color:var(--muted)}
+.auth-tabs button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.auth-err{background:var(--red-wash);color:var(--red);font-size:12.5px;padding:9px 12px;border-radius:6px;margin-bottom:12px;display:none}
+.auth-err.on{display:block}
+.auth-note{font-size:12px;color:var(--muted);text-align:center;margin-top:14px}
+.auth-or{display:flex;align-items:center;gap:10px;color:var(--faint);font-size:11.5px;margin:14px 0}
+.auth-or::before,.auth-or::after{content:"";flex:1;height:1px;background:var(--line)}
+.gbtn{width:100%;justify-content:center;gap:9px}
+/* dashboard */
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.acard{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
+.acard .ab{padding:16px 18px;flex:1}
+.acard .an{font-weight:600;font-size:15px;margin-bottom:3px}
+.acard .ad{font-family:var(--num);font-size:12px;color:var(--muted)}
+.acard .astats{display:flex;gap:16px;margin-top:14px}
+.acard .astats div .n{font-family:var(--num);font-weight:600;font-size:16px}
+.acard .astats div .l{font-size:11px;color:var(--muted)}
+.acard .af{border-top:1px solid var(--line);padding:10px 14px;display:flex;gap:8px;background:var(--paper)}
+.slot-empty{border:1.5px dashed var(--line-strong);border-radius:var(--radius);display:grid;place-items:center;min-height:190px;color:var(--muted);text-align:center;padding:20px}
+.usage{display:flex;align-items:center;gap:10px;font-size:13px}
+.usage .dots{display:flex;gap:5px}
+.usage .dots i{width:22px;height:8px;border-radius:4px;background:var(--surface-2);display:block}
+.usage .dots i.on{background:var(--accent)}
+.uinfo{display:flex;align-items:center;gap:9px}
+.uava{width:30px;height:30px;border-radius:7px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:600;font-size:13px;flex:none}
+
+</style>
+</head>
+<body>
+
+<!-- ================= LANDING ================= -->
+<div id="landing">
+  <div class="land-top">
+    <div class="brand"><span class="mark" aria-hidden="true"><svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg"><rect width="96" height="96" rx="22" fill="#0F6E78"/><g fill="#fff"><rect x="26" y="52" width="9" height="22" rx="2.5"/><rect x="43.5" y="40" width="9" height="34" rx="2.5" opacity=".92"/><rect x="61" y="28" width="9" height="46" rx="2.5" opacity=".82"/></g><circle cx="65.5" cy="30.5" r="6.5" fill="#0F6E78" stroke="#fff" stroke-width="3"/></svg></span>Clarity</div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span class="faint" style="font-size:12.5px">Browser-based · your data never leaves this tab</span>
+      <button class="btn btn-primary btn-sm" onclick="openAuth('signup')">Get started</button>
+    </div>
+  </div>
+  <div class="land-hero">
+    <h1>Analyze your data. Understand what needs fixing.</h1>
+    <p class="sub">Upload a dataset and get a transparent cleaning process, exploratory analysis, visual insights, and a complete report — in one workflow. Every step shows you what it found and why.</p>
+    <div class="land-cta">
+      <button class="btn btn-primary" onclick="openAuth('signup')">
+        <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        Create free account</button>
+      <button class="btn" onclick="openAuth('signin')">
+        <svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+        Sign in</button>
+    </div>
+
+    <div class="preview" aria-hidden="true">
+      <div class="preview-bar"><i></i><i></i><i></i></div>
+      <div class="preview-body">
+        <div class="pv-side">
+          <div class="row on">Overview</div><div class="row">Cleaning</div><div class="row">Data</div>
+          <div class="row">EDA</div><div class="row">Correlation</div><div class="row">Insights</div><div class="row">Report</div>
+        </div>
+        <div class="pv-main">
+          <div class="pv-kpis">
+            <div class="pv-kpi"><div class="n">1,000</div><div class="l">Rows</div></div>
+            <div class="pv-kpi"><div class="n">9</div><div class="l">Columns</div></div>
+            <div class="pv-kpi"><div class="n">2.4%</div><div class="l">Missing</div></div>
+            <div class="pv-kpi"><div class="n">86</div><div class="l">Quality</div></div>
+          </div>
+          <div class="pv-chart"><span style="height:40%"></span><span style="height:62%"></span><span style="height:88%"></span><span style="height:70%"></span><span style="height:52%"></span><span style="height:78%"></span><span style="height:44%"></span><span style="height:60%"></span><span style="height:34%"></span><span style="height:50%"></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="land-foot">
+    <span>Supports CSV · XLSX · JSON · TSV</span>
+    <span>Processing runs entirely in your browser. Nothing is uploaded to a server.</span>
+  </div>
+</div>
+
+
+<!-- ============ SETUP GATE ============ -->
+<div id="setup"><div class="auth-card">
+  <div class="brand"><span class="mark" aria-hidden="true"><svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg"><rect width="96" height="96" rx="22" fill="#0F6E78"/><g fill="#fff"><rect x="26" y="52" width="9" height="22" rx="2.5"/><rect x="43.5" y="40" width="9" height="34" rx="2.5" opacity=".92"/><rect x="61" y="28" width="9" height="46" rx="2.5" opacity=".82"/></g><circle cx="65.5" cy="30.5" r="6.5" fill="#0F6E78" stroke="#fff" stroke-width="3"/></svg></span>Clarity</div>
+  <div class="panel"><div class="panel-b">
+    <h3 style="margin-bottom:6px">Connect your backend</h3>
+    <p class="mut" style="font-size:13px;margin:0 0 14px">This app needs a free Supabase project for accounts and saved analyses. Open <b>index.html</b> and set your project URL and anon key in the <code>CONFIG</code> block near the bottom, then reload.</p>
+    <div class="preview-box" style="margin:0"><div class="ln"><span>CONFIG.SUPABASE_URL</span><span class="b">not set</span></div><div class="ln"><span>CONFIG.SUPABASE_ANON_KEY</span><span class="b">not set</span></div></div>
+    <p class="auth-note">Find both under Supabase → Project Settings → API.</p>
+  </div></div>
+</div></div>
+
+<!-- ============ AUTH ============ -->
+<div id="auth"><div class="auth-card">
+  <div class="brand"><span class="mark" aria-hidden="true"><svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg"><rect width="96" height="96" rx="22" fill="#0F6E78"/><g fill="#fff"><rect x="26" y="52" width="9" height="22" rx="2.5"/><rect x="43.5" y="40" width="9" height="34" rx="2.5" opacity=".92"/><rect x="61" y="28" width="9" height="46" rx="2.5" opacity=".82"/></g><circle cx="65.5" cy="30.5" r="6.5" fill="#0F6E78" stroke="#fff" stroke-width="3"/></svg></span>Clarity</div>
+  <div class="panel"><div class="panel-b" style="padding:22px">
+    <div class="auth-tabs">
+      <button id="tab-signin" class="on" onclick="switchAuth('signin')">Sign in</button>
+      <button id="tab-signup" onclick="switchAuth('signup')">Create account</button>
+    </div>
+    <button class="btn gbtn" onclick="signInWithGoogle()"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/></svg>Continue with Google</button>
+    <div class="auth-or">or with email</div>
+    <div class="auth-err" id="auth-err"></div>
+    <div id="su-fields" style="display:none">
+      <div class="field-row"><label>Full name</label><input type="text" id="au-name" placeholder="Naishadh Vytla"></div>
+      <div class="field-row"><label>Team (optional)</label><input type="text" id="au-team" placeholder="Team name"></div>
+    </div>
+    <div class="field-row"><label>Email</label><input type="text" id="au-email" placeholder="you@example.com" autocomplete="email"></div>
+    <div class="field-row"><label>Password</label><input type="password" id="au-pass" placeholder="At least 6 characters" autocomplete="current-password"></div>
+    <button class="btn btn-primary" id="au-submit" style="width:100%;justify-content:center;margin-top:6px" onclick="submitAuth()">Sign in</button>
+    <p class="auth-note" id="au-switchnote"></p>
+  </div></div>
+  <p class="auth-note"><a href="#" onclick="showScreen('landing');return false">← Back</a></p>
+</div></div>
+
+<!-- ================= APP ================= -->
+<div id="app">
+  <div class="shell">
+    <aside class="side" id="side">
+      <div class="side-top"><div class="brand"><span class="mark" aria-hidden="true"><svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg"><rect width="96" height="96" rx="22" fill="#0F6E78"/><g fill="#fff"><rect x="26" y="52" width="9" height="22" rx="2.5"/><rect x="43.5" y="40" width="9" height="34" rx="2.5" opacity=".92"/><rect x="61" y="28" width="9" height="46" rx="2.5" opacity=".82"/></g><circle cx="65.5" cy="30.5" r="6.5" fill="#0F6E78" stroke="#fff" stroke-width="3"/></svg></span>Clarity</div></div>
+      <nav class="nav" id="nav">
+        <div class="nav-label">Account</div>
+        <a data-view="dashboard"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="7" rx="1"/><rect x="3" y="14" width="11" height="7" rx="1"/><rect x="18" y="14" width="3" height="7" rx="1"/></svg>Dashboard</a>
+        <a data-view="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Profile</a>
+        <div class="nav-label" id="nav-analysis-label">Current analysis</div>
+        <a data-view="overview" class="active"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Overview</a>
+        <a data-view="cleaning"><svg viewBox="0 0 24 24"><path d="M4 4l7 16 2-7 7-2z"/></svg>Cleaning<span class="badge" id="nb-clean">0</span></a>
+        <a data-view="data"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>Data</a>
+        <a data-view="eda"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="7"/><rect x="12" y="7" width="3" height="11"/><rect x="17" y="13" width="3" height="5"/></svg>EDA</a>
+        <a data-view="correlation"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Correlation</a>
+        <a data-view="insights"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10c1 1 1 2 1 3h6c0-1 0-2 1-3a6 6 0 0 0-4-10z"/></svg>Insights<span class="badge" id="nb-ins">0</span></a>
+        <a data-view="report"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>Report</a>
+      </nav>
+      <div class="side-foot">
+        <div class="uinfo" style="margin-bottom:8px"><span class="uava" id="u-ava">?</span><div style="min-width:0"><div id="u-name" style="font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</div><div id="u-email" class="mut" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</div></div></div>
+        <div class="usage" style="margin-bottom:8px"><span class="mut" style="font-size:11.5px">Saved</span><div class="dots" id="u-dots"><i></i><i></i></div><span class="num" id="u-count" style="font-size:11.5px;margin-left:auto">0 / 2</span></div>
+        <div class="spread"><a href="#" onclick="go('dashboard');return false" class="mut" style="font-size:11.5px">Dashboard</a><a href="#" onclick="doSignOut();return false" class="mut" style="font-size:11.5px">Sign out</a></div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="btn btn-ghost btn-sm menu-btn" onclick="document.getElementById('side').classList.toggle('open')">☰</button>
+          <div class="crumbs"><span id="cb-ds">dataset</span><span>/</span><b id="cb-view">Overview</b></div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-sm" id="btn-save" onclick="promptSave()"><svg viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h7"/></svg>Save analysis</button>
+          <button class="btn btn-sm" onclick="exportCleanedCSV()"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>Cleaned data</button>
+          <button class="btn btn-primary btn-sm" onclick="go('report')">Report</button>
+        </div>
+      </div>
+      <div id="views"></div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept=".csv,.tsv,.json,.xlsx,.xls" style="display:none">
+<div class="modal-bg" id="modal"><div class="modal" id="modal-content"></div></div>
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   CLARITY — client-side data analysis engine
+   All computation is deterministic and runs on the real file.
+   ============================================================ */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const fmtInt=n=>n==null||isNaN(n)?'—':Math.round(n).toLocaleString('en-US');
+const fmtNum=(n,d=2)=>n==null||isNaN(n)?'—':Number(n).toLocaleString('en-US',{maximumFractionDigits:d,minimumFractionDigits:0});
+const pct=n=>isNaN(n)?'—':(n*100).toFixed(1)+'%';
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2200);}
+
+let state=null;
+let charts=[];
+function killCharts(){charts.forEach(c=>{try{c.destroy()}catch(e){}});charts=[];}
+
+/* ---------- type inference ---------- */
+const MISSING_TOKENS=new Set(['','na','n/a','nan','null','none','nil','-','--','?','#n/a']);
+const isMissing=v=>v==null||(typeof v==='string'&&MISSING_TOKENS.has(v.trim().toLowerCase()));
+const BOOLS=new Set(['true','false','yes','no','y','n','0','1','t','f']);
+function looksNumeric(v){if(isMissing(v))return null;if(typeof v==='number')return true;
+  const s=String(v).trim().replace(/,/g,'').replace(/^[$₹€£]/,'').replace(/%$/,'');
+  return s!==''&&!isNaN(Number(s))&&isFinite(Number(s));}
+function toNum(v){if(typeof v==='number')return v;if(isMissing(v))return NaN;
+  return Number(String(v).trim().replace(/,/g,'').replace(/^[$₹€£]/,'').replace(/%$/,''));}
+function looksDate(v){if(isMissing(v))return false;if(typeof v==='number')return false;
+  const s=String(v).trim();
+  if(/^\d{4}-\d{1,2}-\d{1,2}([ T]\d{1,2}:\d{2})?/.test(s))return true;
+  if(/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}$/.test(s))return true;
+  if(/^\d{1,2} [A-Za-z]{3,9},? \d{4}$/.test(s))return true;
+  return false;}
+
+function inferType(values){
+  const nonMiss=values.filter(v=>!isMissing(v));
+  if(nonMiss.length===0)return 'empty';
+  let nnum=0,ndate=0,nbool=0;
+  for(const v of nonMiss){
+    if(looksNumeric(v)!==null&&looksNumeric(v))nnum++;
+    if(looksDate(v))ndate++;
+    if(BOOLS.has(String(v).trim().toLowerCase()))nbool++;
+  }
+  const N=nonMiss.length;
+  if(ndate/N>=0.9)return 'date';
+  if(nnum/N>=0.9){
+    const uniq=new Set(nonMiss.map(v=>String(v).trim().toLowerCase()));
+    if(uniq.size<=2&&[...uniq].every(x=>BOOLS.has(x)))return 'boolean';
+    return 'numeric';
+  }
+  if(nbool/N>=0.95&&new Set(nonMiss.map(v=>String(v).trim().toLowerCase())).size<=2)return 'boolean';
+  return 'categorical';
+}
+
+/* ---------- stats ---------- */
+function numericStats(nums){
+  const a=nums.filter(x=>!isNaN(x)).slice().sort((x,y)=>x-y);
+  const n=a.length; if(!n)return null;
+  const sum=a.reduce((s,x)=>s+x,0), mean=sum/n;
+  const q=p=>{const i=(a.length-1)*p,lo=Math.floor(i),hi=Math.ceil(i);return a[lo]+(a[hi]-a[lo])*(i-lo);};
+  const median=q(.5),q1=q(.25),q3=q(.75),iqr=q3-q1;
+  const variance=a.reduce((s,x)=>s+(x-mean)**2,0)/n, std=Math.sqrt(variance);
+  const skew=std?a.reduce((s,x)=>s+((x-mean)/std)**3,0)/n:0;
+  const kurt=std?a.reduce((s,x)=>s+((x-mean)/std)**4,0)/n-3:0;
+  const lb=q1-1.5*iqr, ub=q3+1.5*iqr;
+  const outliers=a.filter(x=>x<lb||x>ub).length;
+  // mode
+  const fr={};let mode=a[0],mc=0;for(const x of a){fr[x]=(fr[x]||0)+1;if(fr[x]>mc){mc=fr[x];mode=x;}}
+  return {n,min:a[0],max:a[n-1],mean,median,q1,q3,iqr,std,variance,skew,kurt,lb,ub,outliers,mode,sum,range:a[n-1]-a[0]};
+}
+function catStats(vals){
+  const nonMiss=vals.filter(v=>!isMissing(v)).map(v=>String(v).trim());
+  const fr={};for(const v of nonMiss)fr[v]=(fr[v]||0)+1;
+  const entries=Object.entries(fr).sort((a,b)=>b[1]-a[1]);
+  const N=nonMiss.length;
+  const entropy=-entries.reduce((s,[,c])=>{const p=c/N;return s+p*Math.log2(p);},0);
+  return {unique:entries.length,top:entries.slice(0,12),N,entropy,mode:entries[0]?entries[0][0]:'—'};
+}
+function pearson(x,y){
+  const n=x.length;if(n<3)return NaN;
+  let sx=0,sy=0,sxx=0,syy=0,sxy=0;
+  for(let i=0;i<n;i++){sx+=x[i];sy+=y[i];sxx+=x[i]*x[i];syy+=y[i]*y[i];sxy+=x[i]*y[i];}
+  const num=n*sxy-sx*sy, den=Math.sqrt((n*sxx-sx*sx)*(n*syy-sy*sy));
+  return den===0?NaN:num/den;
+}
+
+/* ---------- profiling ---------- */
+function profile(rows,cols){
+  const N=rows.length;
+  const columns=cols.map(name=>{
+    const raw=rows.map(r=>r[name]);
+    const type=inferType(raw);
+    const missing=raw.filter(isMissing).length;
+    let stats=null,cat=null,mixed=0,dates=null;
+    if(type==='numeric'){
+      const nums=raw.map(toNum);
+      mixed=raw.filter(v=>!isMissing(v)&&isNaN(toNum(v))).length;
+      stats=numericStats(nums);
+    }else if(type==='date'){
+      const ds=raw.filter(v=>!isMissing(v)).map(v=>new Date(v)).filter(d=>!isNaN(d));
+      if(ds.length){const t=ds.map(d=>+d).sort((a,b)=>a-b);dates={min:new Date(t[0]),max:new Date(t[t.length-1]),n:ds.length};}
+      cat=catStats(raw);
+    }else{cat=catStats(raw);}
+    const unique=cat?cat.unique:(stats?new Set(raw.filter(v=>!isMissing(v)).map(toNum)).size:0);
+    const constant=(unique<=1&&N>0);
+    return {name,type,missing,missingPct:N?missing/N:0,unique,constant,mixed,stats,cat,dates,empty:type==='empty'};
+  });
+  // duplicate rows
+  const seen=new Set();let dup=0;
+  for(const r of rows){const k=cols.map(c=>r[c]).join('\u0001');if(seen.has(k))dup++;else seen.add(k);}
+  return {N,columns,duplicates:dup};
+}
+
+/* ---------- quality score (transparent) ---------- */
+function qualityScore(prof){
+  const {N,columns,duplicates}=prof;
+  const cells=N*columns.length;
+  const totalMissing=columns.reduce((s,c)=>s+c.missing,0);
+  const missRate=cells?totalMissing/cells:0;
+  const dupRate=N?duplicates/N:0;
+  const constCols=columns.filter(c=>c.constant&&!c.empty).length;
+  const emptyCols=columns.filter(c=>c.empty).length;
+  const mixedCols=columns.filter(c=>c.mixed>0).length;
+  const outlierCells=columns.reduce((s,c)=>s+(c.stats?c.stats.outliers:0),0);
+  const numCells=columns.reduce((s,c)=>s+(c.stats?c.stats.n:0),0);
+  const outRate=numCells?outlierCells/numCells:0;
+
+  const parts=[
+    {t:'Missing values',pen:Math.round(missRate*100*0.9),detail:pct(missRate)+' of cells'},
+    {t:'Duplicate rows',pen:Math.round(clamp(dupRate*100,0,100)*0.9),detail:fmtInt(duplicates)+' rows'},
+    {t:'Constant columns',pen:constCols*4,detail:constCols+' column'+(constCols!==1?'s':'')},
+    {t:'Empty columns',pen:emptyCols*6,detail:emptyCols+' column'+(emptyCols!==1?'s':'')},
+    {t:'Mixed-type columns',pen:mixedCols*5,detail:mixedCols+' column'+(mixedCols!==1?'s':'')},
+    {t:'Outliers',pen:Math.round(outRate*100*0.35),detail:pct(outRate)+' of numeric cells'},
+  ];
+  let score=100;parts.forEach(p=>{p.pen=clamp(p.pen,0,30);score-=p.pen;});
+  score=clamp(Math.round(score),0,100);
+  return {score,parts,missRate,dupRate,constCols,emptyCols,mixedCols,outRate,totalMissing};
+}
+
+/* ---------- issue detection ---------- */
+function detectIssues(prof){
+  const issues=[];const {N,columns,duplicates}=prof;
+  if(duplicates>0)issues.push({id:'dup',name:'Duplicate rows',col:'—',count:duplicates,
+    severity:duplicates/N>0.05?'high':'medium',type:'duplicates',
+    reco:'Remove '+fmtInt(duplicates)+' fully duplicated rows',method:'Drop exact-match rows, keep first'});
+  columns.forEach(c=>{
+    if(c.empty){issues.push({id:'empty:'+c.name,name:'Empty column',col:c.name,count:N,severity:'high',type:'dropcol',
+      reco:'Drop column "'+c.name+'" — no values',method:'Remove column'});return;}
+    if(c.constant){issues.push({id:'const:'+c.name,name:'Constant column',col:c.name,count:N,severity:'low',type:'dropcol',
+      reco:'Drop column "'+c.name+'" — single repeated value',method:'Remove column'});}
+    if(c.missing>0){issues.push({id:'miss:'+c.name,name:'Missing values',col:c.name,count:c.missing,
+      severity:c.missingPct>0.2?'high':c.missingPct>0.05?'medium':'low',type:'missing',colType:c.type,
+      reco:c.type==='numeric'?'Impute '+fmtInt(c.missing)+' values (median = '+fmtNum(c.stats?c.stats.median:0)+')':'Impute '+fmtInt(c.missing)+' values (mode = "'+(c.cat?c.cat.mode:'')+'")',
+      method:c.type==='numeric'?'Median imputation':'Most-frequent imputation',c});}
+    if(c.mixed>0){issues.push({id:'mixed:'+c.name,name:'Mixed data types',col:c.name,count:c.mixed,severity:'high',type:'mixed',
+      reco:fmtInt(c.mixed)+' non-numeric values in a numeric column',method:'Coerce invalid entries to missing',c});}
+    if(c.stats&&c.stats.outliers>0){issues.push({id:'out:'+c.name,name:'Outliers',col:c.name,count:c.stats.outliers,
+      severity:'medium',type:'outlier',
+      reco:c.stats.outliers+' values outside [' +fmtNum(c.stats.lb)+', '+fmtNum(c.stats.ub)+'] (IQR)',
+      method:'Flag only — review before removing',c});}
+    if(c.type==='categorical'&&c.cat){
+      const lower={};let coll=0;
+      c.cat.top.forEach(([v])=>{const k=v.toLowerCase().trim();if(lower[k]&&lower[k]!==v)coll++;lower[k]=v;});
+      const hasWs=rowsSample(c.name).some(v=>typeof v==='string'&&v!==v.trim()&&v.trim()!=='');
+      if(hasWs)issues.push({id:'ws:'+c.name,name:'Whitespace in values',col:c.name,count:'—',severity:'low',type:'trim',
+        reco:'Trim leading/trailing spaces in "'+c.name+'"',method:'String trim',c});
+    }
+  });
+  const sev={critical:0,high:1,medium:2,low:3};
+  issues.sort((a,b)=>sev[a.severity]-sev[b.severity]);
+  return issues;
+}
+function rowsSample(col){return state.working.slice(0,200).map(r=>r[col]);}
+
+/* ============================================================
+   INGESTION
+   ============================================================ */
+$('#file-input').addEventListener('change',e=>{const f=e.target.files[0];if(f)handleFile(f);e.target.value='';});
+['dragover','dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{
+  if($('#dz')){e.preventDefault();if(ev==='dragover')$('#dz').classList.add('drag');
+   if(ev==='dragleave')$('#dz').classList.remove('drag');
+   if(ev==='drop'){$('#dz').classList.remove('drag');const f=e.dataTransfer.files[0];if(f)handleFile(f);}}
+}));
+
+function handleFile(file){
+  const name=file.name, ext=name.split('.').pop().toLowerCase(), sizeMB=file.size/1048576;
+  showIngest(name,sizeMB);
+  setTimeout(()=>{
+    if(ext==='csv'||ext==='tsv'||ext==='txt'){
+      Papa.parse(file,{header:true,skipEmptyLines:'greedy',dynamicTyping:false,delimiter:ext==='tsv'?'\t':'',
+        complete:res=>finishParse(res.data,res.meta.fields||[],name,sizeMB,res.meta.delimiter),
+        error:err=>ingestError(err.message)});
+    }else if(ext==='json'){
+      const rd=new FileReader();rd.onload=()=>{try{
+        let j=JSON.parse(rd.result);if(!Array.isArray(j))j=j.data||j.records||j.rows||Object.values(j).find(Array.isArray)||[j];
+        const cols=[...new Set(j.flatMap(o=>Object.keys(o||{})))];
+        finishParse(j.map(o=>{const r={};cols.forEach(c=>r[c]=o&&o[c]!==undefined?o[c]:'');return r;}),cols,name,sizeMB,'json');
+      }catch(e){ingestError('Could not parse JSON: '+e.message);}};rd.readAsText(file);
+    }else if(ext==='xlsx'||ext==='xls'){
+      const rd=new FileReader();rd.onload=()=>{try{
+        const wb=XLSX.read(rd.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];
+        const arr=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+        finishParse(arr,Object.keys(arr[0]||{}),name,sizeMB,'xlsx');
+      }catch(e){ingestError('Could not read spreadsheet: '+e.message);}};rd.readAsArrayBuffer(file);
+    }else ingestError('Unsupported file type ".'+ext+'". Use CSV, TSV, JSON or XLSX.');
+  },400);
+}
+function loadSample(which){
+  const csv=SAMPLES[which];
+  showIngest(which==='sales'?'ecommerce_sales.csv':'customer_churn.csv',csv.length/1048576);
+  setTimeout(()=>{const res=Papa.parse(csv,{header:true,skipEmptyLines:'greedy'});
+    finishParse(res.data,res.meta.fields,which==='sales'?'ecommerce_sales.csv':'customer_churn.csv',csv.length/1048576,',');},600);
+}
+function finishParse(data,cols,name,sizeMB,delim){
+  cols=cols.filter(c=>c&&c.trim()!=='');
+  if(!data.length||!cols.length){return ingestError('No tabular rows were detected in this file.');}
+  markIngestDone();
+  setTimeout(()=>{
+    const prof=profile(data,cols);
+    state={name,sizeMB,delim,rawRows:data,cols:cols.slice(),working:data.map(r=>({...r})),
+      origProfile:prof,profile:prof,log:[],history:[],view:'overview'};
+    buildApp();
+  },500);
+}
+function showIngest(name,sizeMB){
+  $('#landing').style.display='none';$('#app').style.display='none';
+  document.body.insertAdjacentHTML('beforeend',`<div id="ingest-screen" style="min-height:100vh;display:grid;place-items:center;padding:30px">
+    <div style="width:100%;max-width:460px">
+      <div class="brand" style="margin-bottom:20px"><span class="mark" aria-hidden="true"><svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg"><rect width="96" height="96" rx="22" fill="#0F6E78"/><g fill="#fff"><rect x="26" y="52" width="9" height="22" rx="2.5"/><rect x="43.5" y="40" width="9" height="34" rx="2.5" opacity=".92"/><rect x="61" y="28" width="9" height="46" rx="2.5" opacity=".82"/></g><circle cx="65.5" cy="30.5" r="6.5" fill="#0F6E78" stroke="#fff" stroke-width="3"/></svg></span>Clarity</div>
+      <div class="panel"><div class="panel-b">
+        <div style="font-family:var(--num);font-size:14px;font-weight:600">${name}</div>
+        <div class="mut" style="font-size:12.5px;margin-top:2px">${sizeMB.toFixed(1)} MB</div>
+        <div class="ingest" style="border:none;padding:16px 0 0" id="ingest-steps">
+          <div class="st active" data-s="0"><span class="dot"></span>Reading file</div>
+          <div class="st" data-s="1"><span class="dot"></span>Detecting structure</div>
+          <div class="st" data-s="2"><span class="dot"></span>Profiling dataset</div>
+        </div>
+      </div></div>
+    </div></div>`);
+  let s=0;const iv=setInterval(()=>{const steps=$$('#ingest-steps .st');if(s<steps.length-1){steps[s].classList.remove('active');steps[s].classList.add('done');s++;steps[s].classList.add('active');}else clearInterval(iv);window._ingIv=iv;},550);
+}
+function markIngestDone(){clearInterval(window._ingIv);$$('#ingest-steps .st').forEach(el=>{el.classList.remove('active');el.classList.add('done');});}
+function ingestError(msg){
+  clearInterval(window._ingIv);
+  const sc=$('#ingest-screen');
+  if(sc)sc.innerHTML=`<div style="max-width:460px;width:100%"><div class="brand" style="margin-bottom:20px"><span class="mark" aria-hidden="true"><svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg"><rect width="96" height="96" rx="22" fill="#0F6E78"/><g fill="#fff"><rect x="26" y="52" width="9" height="22" rx="2.5"/><rect x="43.5" y="40" width="9" height="34" rx="2.5" opacity=".92"/><rect x="61" y="28" width="9" height="46" rx="2.5" opacity=".82"/></g><circle cx="65.5" cy="30.5" r="6.5" fill="#0F6E78" stroke="#fff" stroke-width="3"/></svg></span>Clarity</div>
+    <div class="panel"><div class="panel-b">
+      <div style="font-weight:600;font-size:15px;margin-bottom:8px">We couldn't read this file</div>
+      <p class="mut" style="font-size:13px;margin:0 0 16px">${msg}</p>
+      <div class="dz-actions" style="justify-content:flex-start">
+        <button class="btn btn-primary btn-sm" onclick="resetApp()">Try another file</button>
+      </div></div></div></div>`;
+}
+
+/* ============================================================
+   APP BUILD + ROUTER
+   ============================================================ */
+function buildApp(){
+  $('#ingest-screen')?.remove();
+  showScreen('app');
+  currentAnalysisMeta=null;
+  if($('#ds-name')) $('#ds-name').textContent=state.name;
+  if($('#cb-ds')) $('#cb-ds').textContent=state.name;
+  const mb=Math.min(95,Math.max(6,state.sizeMB/50*100));
+  if($('#mem-bar')) $('#mem-bar').style.width=mb+'%';
+  if($('#mem-txt')) $('#mem-txt').textContent=state.sizeMB.toFixed(1)+' MB · '+fmtInt(state.profile.N)+' rows';
+  $$('#nav a').forEach(a=>a.onclick=()=>{go(a.dataset.view);$('#side').classList.remove('open');});
+  refreshBadges();
+  go('overview');
+}
+function refreshBadges(){
+  const issues=detectIssues(state.profile);
+  $('#nb-clean').textContent=issues.length;
+  $('#nb-ins').textContent=genInsights().length;
+}
+function go(view){
+  if(state)state.view=view;
+  $$('#nav a').forEach(a=>a.classList.toggle('active',a.dataset.view===view));
+  $('#cb-view').textContent={dashboard:'Dashboard',profile:'Profile',savedreport:'Saved report',overview:'Overview',cleaning:'Cleaning',data:'Data',eda:'EDA',correlation:'Correlation',insights:'Insights',report:'Report'}[view]||view;
+  killCharts();
+  const V=$('#views');V.innerHTML='';
+  const ANALYSIS_VIEWS=['overview','cleaning','data','eda','correlation','insights','report'];
+  if(ANALYSIS_VIEWS.includes(view)&&!state){toast('Start a new analysis from the dashboard');view='dashboard';state&&0;$$('#nav a').forEach(a=>a.classList.toggle('active',a.dataset.view===view));}
+  const MAP={dashboard:viewDashboard,profile:viewProfile,savedreport:viewSavedReport,overview:viewOverview,cleaning:viewCleaning,data:viewData,eda:viewEDA,correlation:viewCorrelation,insights:viewInsights,report:viewReport};
+  (MAP[view]||viewDashboard)(V);
+  document.querySelector('#nav-analysis-label').style.display=state?'block':'none';
+  $$('#nav a').forEach(a=>{if(ANALYSIS_VIEWS.includes(a.dataset.view))a.style.display=state?'flex':'none';});
+  document.querySelector('#btn-save').style.display=(state&&!state.saved)?'inline-flex':'none';
+  window.scrollTo(0,0);
+}
+function resetApp(){state=null;killCharts();$('#ingest-screen')?.remove();$('#app').style.display='none';$('#landing').style.display='flex';}
+
+/* ---------- OVERVIEW ---------- */
+function viewOverview(V){
+  const p=state.profile, q=qualityScore(p);
+  const numeric=p.columns.filter(c=>c.type==='numeric').length;
+  const cat=p.columns.filter(c=>c.type==='categorical').length;
+  const date=p.columns.filter(c=>c.type==='date').length;
+  const bool=p.columns.filter(c=>c.type==='boolean').length;
+  const dcol=Math.max(60,clamp(q.score,0,100));
+  const col=q.score>=80?'var(--green)':q.score>=55?'var(--amber)':'var(--red)';
+  V.innerHTML=`<div class="view">
+    <div class="view-head"><h2>Dataset overview</h2>
+      <p>Profiled from <b>${state.name}</b>. Every metric below is computed directly from the ${fmtInt(p.N)} rows you uploaded.</p></div>
+    <div class="kpis mb">
+      <div class="kpi"><div class="n">${fmtInt(p.N)}</div><div class="l">Rows</div></div>
+      <div class="kpi"><div class="n">${p.columns.length}</div><div class="l">Columns</div></div>
+      <div class="kpi"><div class="n">${numeric}</div><div class="l">Numeric</div></div>
+      <div class="kpi"><div class="n">${cat}</div><div class="l">Categorical</div></div>
+      <div class="kpi"><div class="n">${date}</div><div class="l">Date</div></div>
+      <div class="kpi"><div class="n">${bool}</div><div class="l">Boolean</div></div>
+      <div class="kpi"><div class="n small">${fmtInt(q.totalMissing)}</div><div class="l">Missing cells</div></div>
+      <div class="kpi"><div class="n small">${fmtInt(p.duplicates)}</div><div class="l">Duplicate rows</div></div>
+    </div>
+    <div class="grid mb" style="grid-template-columns:340px 1fr">
+      <div class="panel"><div class="panel-h"><div><h3>Data-quality score</h3>
+        <div class="desc hint" title="Score = 100 − weighted penalties for missingness, duplicates, constant/empty/mixed columns and outliers. Each factor is capped so no single issue dominates.">How is this calculated?</div></div></div>
+        <div class="panel-b"><div class="qscore">
+          <div class="dial" style="--v:${dcol};--c:${col}"><span class="v">${q.score}</span></div>
+          <div class="qbreak">${q.parts.map(pt=>`<div class="qrow"><span class="t">${pt.t}</span><span class="mut" style="font-size:11.5px;font-family:var(--num)">${pt.detail}</span><span class="p ${pt.pen>0?'neg':'ok'}">${pt.pen>0?'−'+pt.pen:'0'}</span></div>`).join('')}</div>
+        </div></div></div>
+      <div class="panel"><div class="panel-h"><h3>Columns</h3><span class="mut" style="font-size:12px">${p.columns.length} fields</span></div>
+        <div class="tbl-wrap" style="border:none;border-radius:0;max-height:340px">
+          <table class="dt"><thead><tr><th>Column</th><th>Type</th><th style="text-align:right">Missing</th><th style="text-align:right">Unique</th><th>Summary</th></tr></thead>
+          <tbody>${p.columns.map(c=>`<tr>
+            <td style="font-family:var(--num);font-weight:500">${esc(c.name)}</td>
+            <td><span class="ty-pill ${tyClass(c.type)}">${c.type}</span></td>
+            <td class="n">${c.missing?fmtInt(c.missing)+' ('+pct(c.missingPct)+')':'0'}</td>
+            <td class="n">${fmtInt(c.unique)}</td>
+            <td class="mut" style="font-size:12px">${colSummary(c)}</td></tr>`).join('')}</tbody></table>
+        </div></div>
+    </div>
+    <div class="panel"><div class="panel-h"><div><h3>Recommended next step</h3></div></div>
+      <div class="panel-b spread">
+        <div class="mut" style="font-size:13.5px">${detectIssues(p).length} data-quality issue${detectIssues(p).length!==1?'s':''} detected. Review and apply transparent fixes, then explore the cleaned data.</div>
+        <button class="btn btn-primary btn-sm" onclick="go('cleaning')">Go to cleaning →</button>
+      </div></div>
+  </div>`;
+}
+function colSummary(c){
+  if(c.type==='numeric'&&c.stats)return `min ${fmtNum(c.stats.min)} · med ${fmtNum(c.stats.median)} · max ${fmtNum(c.stats.max)}`;
+  if(c.type==='date'&&c.dates)return `${c.dates.min.toISOString().slice(0,10)} → ${c.dates.max.toISOString().slice(0,10)}`;
+  if(c.cat&&c.cat.top.length)return `top: ${esc(c.cat.top[0][0])} (${c.cat.top[0][1]})`;
+  return '—';
+}
+const tyClass=t=>({numeric:'num',categorical:'cat',date:'date',boolean:'bool'}[t]||'');
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+
+/* ---------- CLEANING ---------- */
+function viewCleaning(V){
+  const issues=detectIssues(state.profile);
+  V.innerHTML=`<div class="view">
+    <div class="view-head"><h2>Data cleaning</h2>
+      <p>Detected issues are listed by severity. Nothing is changed until you apply it — each action shows what it will do and how many rows it affects.</p></div>
+    <div class="grid mb" style="grid-template-columns:1fr 300px">
+      <div>
+        ${issues.length?issues.map(renderIssue).join(''):'<div class="panel"><div class="empty"><div class="big">No issues detected</div>This dataset passed every quality check. You can move straight to exploration.</div></div>'}
+      </div>
+      <div>
+        <div class="panel mb"><div class="panel-h"><h3>Before / after</h3></div><div class="panel-b" id="ba-panel">${renderBeforeAfter()}</div></div>
+        <div class="panel"><div class="panel-h"><h3>Transformation log</h3></div><div class="panel-b" id="log-panel">${renderLog()}</div></div>
+      </div>
+    </div>
+  </div>`;
+  $$('.issue-h').forEach(h=>h.onclick=e=>{if(e.target.closest('button'))return;h.parentElement.classList.toggle('open');});
+}
+function renderIssue(is){
+  return `<div class="issue" data-id="${is.id}">
+    <div class="issue-h">
+      <svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+      <div class="ti"><div class="name">${is.name}</div><div class="col">${is.col==='—'?'whole dataset':esc(is.col)}</div></div>
+      <span class="sev ${is.severity}">${is.severity}</span>
+      <span class="cnt">${is.count==='—'?'':fmtInt(is.count)}</span>
+      <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();applyFix('${is.id}')">Apply</button>
+    </div>
+    <div class="issue-b">
+      <dl class="field">
+        <dt>Problem</dt><dd>${is.reco}</dd>
+        <dt>Method</dt><dd>${is.method}</dd>
+        <dt>Affected</dt><dd>${is.count==='—'?'values in column':fmtInt(is.count)+(is.type==='dropcol'?' rows in 1 column':' rows')}</dd>
+        ${is.type==='missing'?`<dt>Alternative</dt><dd>${is.colType==='numeric'?'Mean imputation, or drop affected rows':'Drop affected rows'}</dd>`:''}
+        ${is.type==='outlier'?`<dt>Note</dt><dd>Detected anomalies are <b>not</b> confirmed errors. They are flagged, never auto-removed.</dd>`:''}
+      </dl>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="previewFix('${is.id}')">Preview</button>
+        <button class="btn btn-primary btn-sm" onclick="applyFix('${is.id}')">Apply fix</button>
+        ${is.type==='missing'&&is.colType==='numeric'?`<button class="btn btn-sm" onclick="applyFix('${is.id}','mean')">Use mean instead</button>`:''}
+        ${is.type==='outlier'?`<button class="btn btn-sm" onclick="applyFix('${is.id}','cap')">Cap to IQR bounds</button>`:''}
+        ${(is.type==='missing'||is.type==='outlier')?`<button class="btn btn-sm" onclick="applyFix('${is.id}','drop')">Drop rows</button>`:''}
+      </div>
+    </div></div>`;
+}
+function renderBeforeAfter(){
+  const o=state.origProfile,c=state.profile;
+  const oM=o.columns.reduce((s,x)=>s+x.missing,0),cM=c.columns.reduce((s,x)=>s+x.missing,0);
+  const row=(l,a,b)=>`<div class="preview-box" style="margin:0 0 8px;padding:9px 12px"><div class="ln"><span class="mut">${l}</span><span><span class="b">${a}</span> → <span class="a">${b}</span></span></div></div>`;
+  return row('Rows',fmtInt(o.N),fmtInt(c.N))+row('Columns',o.columns.length,c.columns.length)+
+    row('Missing cells',fmtInt(oM),fmtInt(cM))+row('Duplicate rows',fmtInt(o.duplicates),fmtInt(c.duplicates));
+}
+function renderLog(){
+  if(!state.log.length)return '<div class="mut" style="font-size:12.5px">No transformations applied yet.</div>';
+  return state.log.map((l,i)=>`<div class="log-item"><span class="tm">${l.time}</span><span>${l.msg}${i===state.log.length-1?`<span class="undo" onclick="undoLast()">Undo</span>`:''}</span></div>`).join('');
+}
+function snapshot(){state.history.push({working:state.working.map(r=>({...r})),cols:state.cols.slice(),log:state.log.slice()});if(state.history.length>15)state.history.shift();}
+function reprofile(){state.profile=profile(state.working,state.cols);refreshBadges();}
+function logAction(msg){const t=new Date();state.log.push({time:t.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}),msg});}
+function undoLast(){if(!state.history.length)return;const s=state.history.pop();state.working=s.working;state.cols=s.cols;state.log=s.log;reprofile();go('cleaning');toast('Reverted last change');}
+
+function findIssue(id){return detectIssues(state.profile).find(x=>x.id===id);}
+function previewFix(id){
+  const is=findIssue(id);if(!is)return;
+  let body='';
+  if(is.type==='missing'){const m=is.colType==='numeric'?fmtNum(is.c.stats.median):esc(is.c.cat.mode);
+    body=`<p class="mut" style="font-size:13px">${fmtInt(is.count)} missing values in <b>${esc(is.col)}</b> will be filled with the ${is.colType==='numeric'?'median':'most frequent value'}:</p>
+      <div class="preview-box"><div class="ln"><span>missing</span><span class="b">${fmtInt(is.count)} cells</span></div><div class="ln"><span>fill value</span><span class="a">${m}</span></div></div>`;
+  }else if(is.type==='duplicates'){body=`<p class="mut" style="font-size:13px">${fmtInt(is.count)} rows are exact duplicates of an earlier row and will be removed (first occurrence kept).</p>`;}
+  else if(is.type==='dropcol'){body=`<p class="mut" style="font-size:13px">Column <b>${esc(is.col)}</b> ${is.name==='Empty column'?'has no values':'contains a single repeated value'} and will be removed.</p>`;}
+  else if(is.type==='outlier'){body=`<p class="mut" style="font-size:13px">${is.count} values fall outside the IQR fence <b>[${fmtNum(is.c.stats.lb)}, ${fmtNum(is.c.stats.ub)}]</b>. By default they are only flagged. You can cap them to the bounds or drop those rows.</p>`;}
+  else if(is.type==='mixed'){body=`<p class="mut" style="font-size:13px">${fmtInt(is.count)} non-numeric entries in numeric column <b>${esc(is.col)}</b> will be converted to missing, then you can impute them.</p>`;}
+  else if(is.type==='trim'){body=`<p class="mut" style="font-size:13px">Leading and trailing spaces in <b>${esc(is.col)}</b> will be removed.</p>`;}
+  openModal(is.name,body,[{t:'Apply fix',cls:'btn-primary',fn:()=>{closeModal();applyFix(id);}}]);
+}
+function applyFix(id,mode){
+  const is=findIssue(id);if(!is)return;snapshot();let msg='';
+  const W=state.working;
+  if(is.type==='duplicates'){
+    const seen=new Set();const kept=W.filter(r=>{const k=state.cols.map(c=>r[c]).join('\u0001');if(seen.has(k))return false;seen.add(k);return true;});
+    const removed=W.length-kept.length;state.working=kept;msg=`Removed ${fmtInt(removed)} duplicate rows`;
+  }else if(is.type==='dropcol'){
+    state.cols=state.cols.filter(c=>c!==is.col);state.working=W.map(r=>{const {[is.col]:_,...rest}=r;return rest;});msg=`Dropped column "${is.col}"`;
+  }else if(is.type==='missing'){
+    if(mode==='drop'){state.working=W.filter(r=>!isMissing(r[is.col]));msg=`Dropped ${fmtInt(is.count)} rows missing "${is.col}"`;}
+    else{const fill=is.colType==='numeric'?(mode==='mean'?is.c.stats.mean:is.c.stats.median):is.c.cat.mode;
+      let n=0;W.forEach(r=>{if(isMissing(r[is.col])){r[is.col]=is.colType==='numeric'?fill:fill;n++;}});
+      msg=`Filled ${fmtInt(n)} missing values in "${is.col}" with ${is.colType==='numeric'?(mode==='mean'?'mean':'median')+' = '+fmtNum(fill):'mode = "'+fill+'"'}`;}
+  }else if(is.type==='mixed'){
+    let n=0;W.forEach(r=>{if(!isMissing(r[is.col])&&isNaN(toNum(r[is.col]))){r[is.col]='';n++;}});msg=`Converted ${fmtInt(n)} invalid entries in "${is.col}" to missing`;
+  }else if(is.type==='trim'){
+    let n=0;W.forEach(r=>{if(typeof r[is.col]==='string'&&r[is.col]!==r[is.col].trim()){r[is.col]=r[is.col].trim();n++;}});msg=`Trimmed whitespace in ${fmtInt(n)} values of "${is.col}"`;
+  }else if(is.type==='outlier'){
+    if(mode==='cap'){let n=0;W.forEach(r=>{const v=toNum(r[is.col]);if(!isNaN(v)){if(v<is.c.stats.lb){r[is.col]=is.c.stats.lb;n++;}else if(v>is.c.stats.ub){r[is.col]=is.c.stats.ub;n++;}}});msg=`Capped ${fmtInt(n)} outliers in "${is.col}" to IQR bounds`;}
+    else if(mode==='drop'){const before=W.length;state.working=W.filter(r=>{const v=toNum(r[is.col]);return isNaN(v)||(v>=is.c.stats.lb&&v<=is.c.stats.ub);});msg=`Dropped ${fmtInt(before-state.working.length)} outlier rows in "${is.col}"`;}
+    else{msg=`Flagged ${is.count} outliers in "${is.col}" (no rows changed)`;state.history.pop();/*no data change*/logAction(msg);reprofile();go('cleaning');toast('Outliers flagged');return;}
+  }
+  logAction(msg);reprofile();go('cleaning');toast(msg);
+}
+function cleanAll(){
+  const issues=detectIssues(state.profile).filter(i=>i.type!=='outlier');
+  if(!issues.length){toast('Nothing to clean');return;}
+  snapshot();issues.forEach(is=>applyFixSilent(is));reprofile();go('cleaning');toast('Applied '+issues.length+' fixes');
+}
+
+/* ---------- DATA TABLE ---------- */
+let dtState={page:0,sort:null,dir:1,filter:''};
+function viewData(V){
+  dtState={page:0,sort:null,dir:1,filter:''};
+  V.innerHTML=`<div class="view">
+    <div class="view-head spread"><div><h2>Data table</h2><p>The cleaned dataset — ${fmtInt(state.working.length)} rows × ${state.cols.length} columns. Sort by clicking a header; missing values are highlighted.</p></div>
+      <button class="btn btn-sm" onclick="exportCleanedCSV()"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>Download CSV</button></div>
+    <div class="panel mb"><div class="panel-b" style="padding:12px 14px;display:flex;gap:10px;align-items:center">
+      <input type="text" id="dt-filter" placeholder="Search across all columns…" style="max-width:320px" oninput="dtState.filter=this.value;dtState.page=0;renderTable()">
+      <span class="mut" style="font-size:12.5px" id="dt-count"></span>
+      <span style="margin-left:auto" class="mut" id="dt-page"></span>
+    </div></div>
+    <div id="dt-mount"></div>
+  </div>`;
+  renderTable();
+}
+function renderTable(){
+  const cols=state.cols, prof=state.profile;
+  const typeOf={};prof.columns.forEach(c=>typeOf[c.name]=c.type);
+  let rows=state.working;
+  if(dtState.filter){const f=dtState.filter.toLowerCase();rows=rows.filter(r=>cols.some(c=>String(r[c]??'').toLowerCase().includes(f)));}
+  if(dtState.sort){const s=dtState.sort,ty=typeOf[s],d=dtState.dir;
+    rows=rows.slice().sort((a,b)=>{let x=a[s],y=b[s];const xm=isMissing(x),ym=isMissing(y);if(xm&&ym)return 0;if(xm)return 1;if(ym)return -1;
+      if(ty==='numeric'){x=toNum(x);y=toNum(y);}else{x=String(x).toLowerCase();y=String(y).toLowerCase();}return x<y?-1*d:x>y?1*d:0;});}
+  const per=50,total=rows.length,pages=Math.max(1,Math.ceil(total/per));
+  dtState.page=clamp(dtState.page,0,pages-1);
+  const slice=rows.slice(dtState.page*per,dtState.page*per+per);
+  $('#dt-count').textContent=`${fmtInt(total)} row${total!==1?'s':''}${dtState.filter?' match':''}`;
+  $('#dt-page').innerHTML=`Page ${dtState.page+1} / ${pages} &nbsp; <button class="btn btn-sm" ${dtState.page===0?'disabled':''} onclick="dtState.page--;renderTable()">Prev</button> <button class="btn btn-sm" ${dtState.page>=pages-1?'disabled':''} onclick="dtState.page++;renderTable()">Next</button>`;
+  $('#dt-mount').innerHTML=`<div class="tbl-wrap" style="max-height:62vh"><table class="dt"><thead><tr>
+    <th style="text-align:right;color:var(--faint)">#</th>
+    ${cols.map(c=>`<th class="sortable ${dtState.sort===c?(dtState.dir===1?'sort-asc':'sort-desc'):''}" onclick="sortCol('${cssEsc(c)}')">${esc(c)}<span class="ty">${typeOf[c]}</span></th>`).join('')}
+  </tr></thead><tbody>${slice.map((r,i)=>`<tr><td class="n faint">${dtState.page*per+i+1}</td>${cols.map(c=>{
+    const v=r[c];if(isMissing(v))return '<td class="miss"></td>';
+    return `<td class="${typeOf[c]==='numeric'?'n':''}">${esc(v)}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+function sortCol(c){c=c.replace(/\\'/g,"'");if(dtState.sort===c)dtState.dir*=-1;else{dtState.sort=c;dtState.dir=1;}renderTable();}
+const cssEsc=s=>String(s).replace(/'/g,"\\'");
+
+/* ---------- EDA ---------- */
+function viewEDA(V){
+  const p=state.profile;
+  const palette=['#0F6E78','#4A5568','#9A6B12','#8A5A6E','#4E7A5A','#6A5A8A'];
+  V.innerHTML=`<div class="view">
+    <div class="view-head"><h2>Exploratory analysis</h2><p>Automatically generated from the cleaned dataset. Chart types are chosen from each column's detected type — histograms for numeric fields, frequency bars for categories, time series for dates.</p></div>
+    <div class="kpis mb">
+      <div class="kpi"><div class="n">${fmtInt(state.working.length)}</div><div class="l">Observations</div></div>
+      <div class="kpi"><div class="n">${p.columns.length}</div><div class="l">Features</div></div>
+      <div class="kpi"><div class="n">${p.columns.filter(c=>c.type==='numeric').length}</div><div class="l">Numeric</div></div>
+      <div class="kpi"><div class="n">${p.columns.filter(c=>c.type==='categorical').length}</div><div class="l">Categorical</div></div>
+      <div class="kpi"><div class="n">${p.columns.filter(c=>c.type==='date').length}</div><div class="l">Date</div></div>
+    </div>
+    <div class="eda-grid" id="eda-grid"></div>
+  </div>`;
+  const grid=$('#eda-grid');let ci=0;
+  p.columns.forEach(c=>{
+    if(c.empty||c.constant)return;
+    const id='ch_'+(ci++);
+    const card=document.createElement('div');card.className='panel chart-card';
+    if(c.type==='numeric'&&c.stats){
+      card.innerHTML=`<div class="panel-h"><div><h3>${esc(c.name)}</h3><div class="desc">Distribution · ${fmtInt(c.stats.n)} values</div></div><span class="ty-pill num">numeric</span></div>
+        <div class="panel-b"><div class="chart-box"><canvas id="${id}"></canvas></div>
+        <div class="stat-mini">
+          <div><span class="sn">${fmtNum(c.stats.mean)}</span><span class="sl">mean</span></div>
+          <div><span class="sn">${fmtNum(c.stats.median)}</span><span class="sl">median</span></div>
+          <div><span class="sn">${fmtNum(c.stats.std)}</span><span class="sl">std dev</span></div>
+          <div><span class="sn">${c.stats.outliers}</span><span class="sl">outliers</span></div>
+        </div></div>`;
+      grid.appendChild(card);drawHistogram(id,state.working.map(r=>toNum(r[c.name])).filter(x=>!isNaN(x)),palette[0]);
+    }else if(c.type==='date'&&c.dates){
+      card.innerHTML=`<div class="panel-h"><div><h3>${esc(c.name)}</h3><div class="desc">Records over time</div></div><span class="ty-pill date">date</span></div>
+        <div class="panel-b"><div class="chart-box"><canvas id="${id}"></canvas></div></div>`;
+      grid.appendChild(card);drawTimeSeries(id,c.name,palette[1]);
+    }else if(c.cat){
+      card.innerHTML=`<div class="panel-h"><div><h3>${esc(c.name)}</h3><div class="desc">Top values · ${fmtInt(c.cat.unique)} unique</div></div><span class="ty-pill ${tyClass(c.type)}">${c.type}</span></div>
+        <div class="panel-b"><div class="chart-box"><canvas id="${id}"></canvas></div></div>`;
+      grid.appendChild(card);drawBar(id,c.cat.top.slice(0,8),palette[2]);
+    }
+  });
+  if(!grid.children.length)grid.innerHTML='<div class="panel" style="grid-column:1/-1"><div class="empty">No distributable columns after cleaning.</div></div>';
+}
+const CH_BASE={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+  scales:{x:{grid:{display:false},ticks:{font:{family:"'IBM Plex Mono'",size:10},color:'#6E6E69',maxRotation:0,autoSkip:true,maxTicksLimit:8}},
+          y:{grid:{color:'#EFEFED'},ticks:{font:{family:"'IBM Plex Mono'",size:10},color:'#6E6E69'}}}};
+function drawHistogram(id,vals,color){
+  const s=numericStats(vals);if(!s)return;
+  const bins=Math.min(24,Math.max(6,Math.ceil(Math.sqrt(vals.length))));
+  const w=(s.max-s.min)/bins||1;const counts=new Array(bins).fill(0);const labels=[];
+  vals.forEach(v=>{let b=Math.floor((v-s.min)/w);if(b>=bins)b=bins-1;if(b<0)b=0;counts[b]++;});
+  for(let i=0;i<bins;i++)labels.push(fmtNum(s.min+i*w,1));
+  charts.push(new Chart($('#'+id),{type:'bar',data:{labels,datasets:[{data:counts,backgroundColor:color,borderRadius:2,barPercentage:1,categoryPercentage:.96}]},options:CH_BASE}));
+}
+function drawBar(id,top,color){
+  charts.push(new Chart($('#'+id),{type:'bar',data:{labels:top.map(t=>t[0].length>16?t[0].slice(0,15)+'…':t[0]),
+    datasets:[{data:top.map(t=>t[1]),backgroundColor:color,borderRadius:2}]},
+    options:{...CH_BASE,indexAxis:'y',scales:{x:{grid:{color:'#EFEFED'},ticks:{font:{family:"'IBM Plex Mono'",size:10},color:'#6E6E69'}},y:{grid:{display:false},ticks:{font:{family:"'IBM Plex Sans'",size:11},color:'#1A1A19'}}}}}));
+}
+function drawTimeSeries(id,col,color){
+  const pts=state.working.map(r=>new Date(r[col])).filter(d=>!isNaN(d)).sort((a,b)=>a-b);
+  if(!pts.length)return;
+  const span=(pts[pts.length-1]-pts[0])/86400000;
+  const key=span>720?(d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')):span>60?(d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')):(d=>d.toISOString().slice(0,10));
+  const m={};pts.forEach(d=>{const k=key(d);m[k]=(m[k]||0)+1;});
+  const labels=Object.keys(m).sort();
+  charts.push(new Chart($('#'+id),{type:'line',data:{labels,datasets:[{data:labels.map(k=>m[k]),borderColor:color,backgroundColor:'rgba(74,85,104,.08)',fill:true,tension:.25,pointRadius:2,borderWidth:2}]},options:CH_BASE}));
+}
+
+/* ---------- CORRELATION ---------- */
+let corrMethod='pearson';
+function viewCorrelation(V){
+  const nums=state.profile.columns.filter(c=>c.type==='numeric');
+  if(nums.length<2){V.innerHTML=`<div class="view"><div class="view-head"><h2>Correlation</h2></div><div class="panel"><div class="empty"><div class="big">Not enough numeric columns</div>Correlation needs at least two numeric fields. This dataset has ${nums.length}.</div></div></div>`;return;}
+  // build aligned numeric matrix on complete rows
+  const names=nums.map(c=>c.name);
+  const cols=names.map(n=>state.working.map(r=>toNum(r[n])));
+  const M=names.length;const mat=Array.from({length:M},()=>new Array(M).fill(0));
+  const pairs=[];
+  for(let i=0;i<M;i++)for(let j=i;j<M;j++){
+    const xs=[],ys=[];for(let k=0;k<cols[i].length;k++){const a=cols[i][k],b=cols[j][k];if(!isNaN(a)&&!isNaN(b)){xs.push(a);ys.push(b);}}
+    const r=pearson(xs,ys);mat[i][j]=mat[j][i]=r;
+    if(i!==j&&!isNaN(r))pairs.push({a:names[i],b:names[j],r});
+  }
+  pairs.sort((x,y)=>Math.abs(y.r)-Math.abs(x.r));
+  const heatColor=r=>{if(isNaN(r))return '#EFEFED';const a=Math.abs(r);
+    return r>=0?`rgba(15,110,120,${.15+a*.8})`:`rgba(178,58,46,${.15+a*.8})`;};
+  V.innerHTML=`<div class="view">
+    <div class="view-head"><h2>Correlation analysis</h2><p>Pearson correlation across ${M} numeric columns, computed on rows where both values are present. Correlation does not imply causation.</p></div>
+    <div class="grid" style="grid-template-columns:1fr 320px">
+      <div class="panel"><div class="panel-h"><h3>Correlation matrix</h3><span class="mut num" style="font-size:12px">Pearson r</span></div>
+        <div class="panel-b heat"><table><thead><tr><th></th>${names.map(n=>`<th title="${esc(n)}">${esc(n.length>8?n.slice(0,7)+'…':n)}</th>`).join('')}</tr></thead>
+        <tbody>${names.map((n,i)=>`<tr><th class="rowh" title="${esc(n)}">${esc(n.length>14?n.slice(0,13)+'…':n)}</th>${names.map((_,j)=>{const r=mat[i][j];return `<td style="background:${heatColor(r)}" title="${esc(n)} ↔ ${esc(names[j])}: ${isNaN(r)?'n/a':r.toFixed(3)}">${isNaN(r)?'—':r.toFixed(2)}</td>`;}).join('')}</tr>`).join('')}</tbody></table></div></div>
+      <div class="panel"><div class="panel-h"><h3>Strongest relationships</h3></div><div class="panel-b">
+        ${pairs.slice(0,8).map(p=>`<div style="padding:9px 0;border-bottom:1px dashed var(--line)"><div class="spread"><span style="font-size:12.5px">${esc(p.a)} <span class="mut">↔</span> ${esc(p.b)}</span><span class="num" style="font-weight:600;color:${p.r>=0?'var(--accent-ink)':'var(--red)'}">${p.r>=0?'+':''}${p.r.toFixed(2)}</span></div><div class="track" style="height:5px;background:var(--surface-2);border-radius:3px;margin-top:6px;overflow:hidden"><i style="display:block;height:100%;width:${Math.abs(p.r)*100}%;background:${p.r>=0?'var(--accent)':'var(--red)'};border-radius:3px"></i></div></div>`).join('')||'<div class="mut">No valid pairs.</div>'}
+      </div></div>
+    </div>
+  </div>`;
+}
+
+/* ---------- INSIGHTS ---------- */
+function genInsights(){
+  const p=state.profile,out=[],N=state.working.length;
+  const q=qualityScore(p);
+  // 1. missingness
+  const worstMiss=[...p.columns].filter(c=>c.missing>0).sort((a,b)=>b.missingPct-a.missingPct)[0];
+  if(worstMiss)out.push({icon:'gap',tx:`Column "${worstMiss.name}" has the most missing data — ${fmtInt(worstMiss.missing)} values (${pct(worstMiss.missingPct)}).`,ev:`missing ${fmtInt(worstMiss.missing)}/${fmtInt(p.N)}`});
+  // 2. duplicates
+  if(p.duplicates>0)out.push({icon:'copy',tx:`The dataset contains ${fmtInt(p.duplicates)} duplicate rows (${pct(p.duplicates/p.N)} of all records).`,ev:`${fmtInt(p.duplicates)} duplicate rows`});
+  // 3. concentration in categoricals
+  p.columns.filter(c=>c.type==='categorical'&&c.cat&&c.cat.unique>1&&c.cat.unique<=40).forEach(c=>{
+    const top3=c.cat.top.slice(0,3).reduce((s,t)=>s+t[1],0);const share=top3/c.cat.N;
+    if(share>0.6&&c.cat.unique>=3)out.push({icon:'pie',tx:`In "${c.name}", the top 3 of ${c.cat.unique} categories account for ${pct(share)} of records — the field is highly concentrated.`,ev:`top-3 share ${pct(share)}`});
+  });
+  // 4. skew
+  p.columns.filter(c=>c.stats&&Math.abs(c.stats.skew)>1.5).slice(0,2).forEach(c=>{
+    out.push({icon:'wave',tx:`"${c.name}" is strongly ${c.stats.skew>0?'right':'left'}-skewed (skewness ${fmtNum(c.stats.skew)}); its mean (${fmtNum(c.stats.mean)}) sits well ${c.stats.skew>0?'above':'below'} its median (${fmtNum(c.stats.median)}).`,ev:`skew ${fmtNum(c.stats.skew)}`});
+  });
+  // 5. revenue/value concentration (Pareto) if a value-like numeric column exists
+  const valCol=p.columns.find(c=>c.stats&&/revenue|sales|amount|income|spend/i.test(c.name))
+            || p.columns.find(c=>c.stats&&/total|value|price/i.test(c.name));
+  if(valCol){const vals=state.working.map(r=>toNum(r[valCol.name])).filter(x=>!isNaN(x)).sort((a,b)=>b-a);
+    const tot=vals.reduce((s,x)=>s+x,0);const top10=vals.slice(0,Math.ceil(vals.length*.1)).reduce((s,x)=>s+x,0);
+    if(tot>0)out.push({icon:'trend',tx:`The top 10% of records by "${valCol.name}" contribute ${pct(top10/tot)} of its total — value is concentrated in a small share of rows.`,ev:`top-10% share ${pct(top10/tot)}`});
+  }
+  // 6. strongest correlation
+  const nums=p.columns.filter(c=>c.type==='numeric');
+  if(nums.length>=2){let best=null;for(let i=0;i<nums.length;i++)for(let j=i+1;j<nums.length;j++){
+    const xs=[],ys=[];state.working.forEach(r=>{const a=toNum(r[nums[i].name]),b=toNum(r[nums[j].name]);if(!isNaN(a)&&!isNaN(b)){xs.push(a);ys.push(b);}});
+    const r=pearson(xs,ys);if(r!=null&&!isNaN(r)&&(!best||Math.abs(r)>Math.abs(best.r)))best={a:nums[i].name,b:nums[j].name,r};}
+    if(best&&Math.abs(best.r)>0.3)out.push({icon:'link',tx:`"${best.a}" and "${best.b}" show a ${best.r>0?'positive':'negative'} correlation (r = ${best.r.toFixed(2)}) — the strongest relationship among numeric fields.`,ev:`Pearson r = ${best.r.toFixed(2)}`});
+  }
+  // 7. time trend
+  const dcol=p.columns.find(c=>c.type==='date'),vcol=valCol||nums[0];
+  if(dcol&&vcol&&vcol.stats){const series={};state.working.forEach(r=>{const d=new Date(r[dcol.name]);if(!isNaN(d)){const k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');const v=toNum(r[vcol.name]);if(!isNaN(v)){series[k]=series[k]||[0,0];series[k][0]+=v;series[k][1]++;}}});
+    const keys=Object.keys(series).sort();if(keys.length>=3){const first=series[keys[0]][0],last=series[keys[keys.length-1]][0];if(first>0){const ch=(last-first)/first;out.push({icon:'trend',tx:`Total "${vcol.name}" ${ch>=0?'rose':'fell'} ${pct(Math.abs(ch))} from ${keys[0]} to ${keys[keys.length-1]} (${ch>=0?'+':''}${fmtNum(last-first)}).`,ev:`${keys[0]} → ${keys[keys.length-1]}`});}}}
+  return out;
+}
+function viewInsights(V){
+  const ins=genInsights();
+  const icons={gap:'<path d="M12 2v20M2 12h20"/>',copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/>',pie:'<path d="M12 2a10 10 0 1 0 10 10H12z"/>',wave:'<path d="M3 12c3-6 6 6 9 0s6-6 9 0"/>',trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M17 7h4v4"/>',link:'<path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/>'};
+  V.innerHTML=`<div class="view">
+    <div class="view-head"><h2>Insights</h2><p>Evidence-based observations generated from the computed statistics. Each references the metric it came from. Nothing here is speculative — if a pattern isn't supported by the numbers, it isn't shown.</p></div>
+    ${ins.length?ins.map(i=>`<div class="insight"><div class="ic"><svg viewBox="0 0 24 24">${icons[i.icon]||icons.trend}</svg></div><div class="bd"><div class="tx">${i.tx}</div><div class="ev">${i.ev}</div></div></div>`).join('')
+    :`<div class="insight none"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg></div><div class="bd"><div class="tx">No statistically meaningful pattern detected from the available variables.</div><div class="ev">try a richer dataset</div></div></div>`}
+  </div>`;
+}
+
+/* ---------- REPORT ---------- */
+function buildReportModel(){
+  const p=state.profile,o=state.origProfile,q=qualityScore(p),N=state.working.length;
+  const numeric=p.columns.filter(c=>c.type==='numeric');
+  return {name:state.name,N,cols:p.columns.length,q,o,p,numeric,ins:genInsights(),log:state.log,date:new Date().toLocaleString('en-US')};
+}
+function svgBarChart(title,items,maxItems=8){
+  const a=(items||[]).slice(0,maxItems); if(!a.length)return '<div class="mut" style="padding:20px 0;font-size:12px">No chartable values.</div>';
+  const max=Math.max(...a.map(x=>Number(x[1])||0),1), W=720,H=Math.max(150,40*a.length+24),left=185,barW=W-left-25;
+  const rows=a.map(([label,val],i)=>{const y=25+i*40,w=Math.max(2,(Number(val)||0)/max*barW);return `<text x="0" y="${y+14}" font-size="11" fill="#6E6E69">${esc(String(label).slice(0,24))}</text><rect x="${left}" y="${y}" width="${w}" height="18" rx="3" fill="#0F6E78" opacity=".9"/><text x="${Math.min(W-5,left+w+7)}" y="${y+14}" font-size="10" font-family="IBM Plex Mono,monospace" fill="#1A1A19">${fmtInt(val)}</text>`}).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${rows}</svg>`;
+}
+function svgMissingChart(columns){
+  const a=(columns||[]).filter(c=>c.missing>0).sort((x,y)=>y.missingPct-x.missingPct).slice(0,8);if(!a.length)return '<div class="mut" style="padding:20px 0;font-size:12px">No missing values detected.</div>';
+  return svgBarChart('Missing values',a.map(c=>[c.name,Math.round(c.missingPct*1000)/10]),8).replaceAll('#1A1A19','#1A1A19').replace(/<text x="([^"]+)" y="([^"]+)" font-size="10" font-family="IBM Plex Mono,monospace" fill="#1A1A19">([^<]+)<\/text>/g,'<text x="$1" y="$2" font-size="10" font-family="IBM Plex Mono,monospace" fill="#1A1A19">$3%</text>');
+}
+function visualTopCategory(p){
+  const c=p.columns.find(x=>x.type==='categorical'&&x.cat&&x.cat.top&&x.cat.top.length);
+  return c?{column:c,chart:svgBarChart(c.name+' frequency',c.cat.top.slice(0,6))}:null;
+}
+function strongestPair(p){
+  const nums=p.columns.filter(c=>c.type==='numeric');let best=null;
+  for(let i=0;i<nums.length;i++)for(let j=i+1;j<nums.length;j++){
+    const xs=[],ys=[];state.working.forEach(r=>{const a=toNum(r[nums[i].name]),b=toNum(r[nums[j].name]);if(!isNaN(a)&&!isNaN(b)){xs.push(a);ys.push(b);}});
+    const r=pearson(xs,ys);if(!isNaN(r)&&(!best||Math.abs(r)>Math.abs(best.r)))best={a:nums[i].name,b:nums[j].name,r};
+  } return best;
+}
+function reportVisualHTML(m){
+  const q=m.q,p=m.p, top=visualTopCategory(p), pair=strongestPair(p);
+  const qColor=q.score>=80?'#2F7A55':q.score>=55?'#9A6B12':'#B23A2E';
+  const missingCols=p.columns.filter(c=>c.missing>0);
+  const findings=(m.ins||[]).slice(0,4);
+  return `<section class="visual-report">
+    <div class="vr-hero">
+      <div class="vr-chart"><div class="vr-title">Visual executive summary</div><div class="vr-sub">A one-page view of the dataset, quality, anomalies, distributions and strongest signals.</div>
+        <div class="vr-kpis" style="margin-top:14px"><div class="vr-kpi"><div class="v">${fmtInt(m.N)}</div><div class="l">Rows analysed</div></div><div class="vr-kpi"><div class="v">${m.cols}</div><div class="l">Columns</div></div><div class="vr-kpi"><div class="v">${fmtInt(q.totalMissing)}</div><div class="l">Missing cells</div></div><div class="vr-kpi"><div class="v">${fmtInt(p.duplicates)}</div><div class="l">Duplicate rows</div></div></div>
+      </div>
+      <div class="vr-chart"><h3>Data quality</h3><p>Weighted score from measurable quality issues.</p><div class="vr-quality"><div class="vr-ring" style="background:conic-gradient(${qColor} ${q.score*3.6}deg,var(--surface-2) 0deg)"><b>${q.score}</b></div><div class="vr-quality-copy"><strong>${q.score>=80?'Good baseline quality':q.score>=55?'Quality needs review':'Quality needs attention'}</strong><br>${q.parts.filter(x=>x.pen>0).slice(0,3).map(x=>`${esc(x.t)}: ${esc(x.detail)}`).join('<br>')||'No quality penalties detected.'}</div></div></div>
+    </div>
+    <div class="vr-hero">
+      <div class="vr-chart"><h3>Missingness by column</h3><p>Percentage of rows missing a value.</p>${svgMissingChart(p.columns)}</div>
+      <div class="vr-chart"><h3>${top?`Top values — ${esc(top.column.name)}`:'Category distribution'}</h3><p>${top?`Most frequent categories in the first suitable categorical field.`:'No suitable categorical field was detected.'}</p>${top?top.chart:'<div class="mut" style="padding:20px 0;font-size:12px">No categorical distribution available.</div>'}</div>
+    </div>
+    <div class="vr-hero">
+      <div class="vr-chart"><h3>Strongest numeric relationship</h3><p>Pearson correlation across complete pairs.</p>${pair?`<div style="display:flex;align-items:center;justify-content:space-between;padding:24px 4px"><div><div style="font-size:14px;font-weight:600">${esc(pair.a)} <span class="mut">↔</span> ${esc(pair.b)}</div><div class="mut" style="font-size:11.5px;margin-top:5px">Association only; correlation does not imply causation.</div></div><div class="num" style="font-size:30px;font-weight:600;color:${pair.r>=0?'var(--accent-ink)':'var(--red)'}">${pair.r>=0?'+':''}${pair.r.toFixed(2)}</div></div>`:'<div class="mut" style="padding:20px 0;font-size:12px">At least two usable numeric columns are required.</div>'}</div>
+      <div class="vr-chart"><h3>Key findings</h3><p>Automatically generated from measured statistics.</p><div class="vr-findings">${findings.length?findings.map(i=>`<div class="vr-finding"><span class="tag">DATA SIGNAL</span><div class="tx">${i.tx}</div><div class="ev">${i.ev}</div></div>`).join(''):'<div class="mut">No findings available.</div>'}</div></div>
+  </section>`;
+}
+function buildReportModel(){
+  const p=state.profile,o=state.origProfile,q=qualityScore(p),N=state.working.length;
+  const numeric=p.columns.filter(c=>c.type==='numeric');
+  return {name:state.name,N,cols:p.columns.length,q,o,p,numeric,ins:genInsights(),log:state.log,date:new Date().toLocaleString('en-US')};
+}
+function reportHTML(m){
+  const numRows=m.numeric.map(c=>`<tr><td>${esc(c.name)}</td><td>${fmtNum(c.stats.mean)}</td><td>${fmtNum(c.stats.median)}</td><td>${fmtNum(c.stats.std)}</td><td>${fmtNum(c.stats.min)}</td><td>${fmtNum(c.stats.max)}</td><td>${c.stats.outliers}</td></tr>`).join('');
+  return reportVisualHTML(m)+`<h1>Data Analysis Report</h1>
+  <div class="meta">${esc(m.name)} · ${fmtInt(m.N)} rows × ${m.cols} columns · generated ${m.date}</div>
+  <h2>Executive summary</h2>
+  <p>This report summarises the automated cleaning and exploratory analysis of <b>${esc(m.name)}</b>. The dataset holds <b>${fmtInt(m.N)}</b> records across <b>${m.cols}</b> columns, with a data-quality score of <b>${m.q.score}/100</b>. ${m.log.length?`A total of <b>${m.log.length}</b> cleaning ${m.log.length===1?'transformation was':'transformations were'} applied.`:'No cleaning transformations were required.'} ${m.ins.length?`The analysis surfaced ${m.ins.length} evidence-based ${m.ins.length===1?'insight':'insights'}, summarised below.`:''}</p>
+  <h2>1. Dataset overview</h2>
+  <table><tr><th>Metric</th><th>Value</th></tr><tr><td>Rows</td><td>${fmtInt(m.N)}</td></tr><tr><td>Columns</td><td>${m.cols}</td></tr><tr><td>Numeric / Categorical / Date</td><td>${m.p.columns.filter(c=>c.type==='numeric').length} / ${m.p.columns.filter(c=>c.type==='categorical').length} / ${m.p.columns.filter(c=>c.type==='date').length}</td></tr><tr><td>Data-quality score</td><td>${m.q.score}/100</td></tr></table>
+  <h2>2. Data quality assessment</h2><p>The quality score starts at 100 and deducts weighted, capped penalties for measurable issues:</p><table><tr><th>Factor</th><th>Detail</th><th>Penalty</th></tr>${m.q.parts.map(pt=>`<tr><td>${pt.t}</td><td>${pt.detail}</td><td>${pt.pen>0?'−'+pt.pen:'0'}</td></tr>`).join('')}</table>
+  <h2>3. Cleaning process</h2>${m.log.length?`<ul>${m.log.map(l=>`<li>${esc(l.msg)}</li>`).join('')}</ul>`:'<p>No transformations were applied; the dataset passed all checks in its original form.</p>'}
+  <h2>4. Key findings</h2>${m.ins.length?`<ul>${m.ins.map(i=>`<li>${esc(i.tx)}</li>`).join('')}</ul>`:'<p>No statistically meaningful patterns were detected from the available variables.</p>'}
+  <h2>5. Statistical summary (numeric columns)</h2>${m.numeric.length?`<table><tr><th>Column</th><th>Mean</th><th>Median</th><th>Std</th><th>Min</th><th>Max</th><th>Outliers</th></tr>${numRows}</table>`:'<p>No numeric columns in this dataset.</p>'}
+  <h2>6. Limitations</h2><ul><li>Missing values were imputed where indicated, which can reduce variance and bias downstream models.</li><li>Outliers were detected using the 1.5×IQR rule and flagged, not confirmed as errors.</li><li>Reported correlations describe association only and do not establish causation.</li><li>Type inference is heuristic; columns with mixed formats may be classified conservatively.</li><li>Analysis reflects the supplied sample and may not generalise to the full population.</li></ul>
+  <h2>7. Recommendations for further analysis</h2><ul><li>Validate flagged outliers against source systems before removing them.</li><li>Investigate the strongest correlations with a modelling or hypothesis-testing approach.</li><li>If a target variable exists, proceed to feature analysis and predictive modelling.</li><li>Collect additional context for high-missingness columns rather than relying on imputation.</li></ul>`;
+}
+function viewReport(V){
+  const m=buildReportModel();
+  V.innerHTML=`<div class="view"><div class="view-head spread no-print"><div><h2>Visual report</h2><p>Infographic summary first, detailed analyst report below. Every visual is generated from the current dataset.</p></div><div style="display:flex;gap:8px"><button class="btn btn-sm" onclick="exportReport('md')">Markdown</button><button class="btn btn-sm" onclick="exportReport('html')">Visual HTML</button><button class="btn btn-sm" onclick="window.print()">Print / PDF</button><button class="btn btn-primary btn-sm" onclick="exportCleanedCSV()">Cleaned CSV</button></div></div><div class="report" id="report-body">${reportHTML(m)}</div></div>`;
+}
+
+/* ---------- EXPORTS ---------- */
+function download(name,text,mime){const b=new Blob([text],{type:mime});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);}
+function exportCleanedCSV(){if(!state)return;const csv=Papa.unparse(state.working.map(r=>{const o={};state.cols.forEach(c=>o[c]=r[c]);return o;}));download(state.name.replace(/\.[^.]+$/,'')+'_cleaned.csv',csv,'text/csv');toast('Downloaded cleaned CSV');}
+function exportReport(fmt){const m=buildReportModel();
+  if(fmt==='html'){const doc=`<!doctype html><meta charset=utf-8><title>Report — ${esc(m.name)}</title><style>body{font-family:'IBM Plex Sans',system-ui,sans-serif;max-width:1000px;margin:40px auto;padding:0 20px;color:#1a1a19;line-height:1.6}h1{font-size:26px}h2{font-size:17px;border-bottom:1px solid #e5e5e2;padding-bottom:6px;margin-top:28px}table{border-collapse:collapse;width:100%;font-size:13px;margin:10px 0}td,th{border:1px solid #e5e5e2;padding:6px 10px;text-align:left}th{background:#f4f4f2}.meta{color:#6e6e69;font-size:13px}.visual-report{display:flex;flex-direction:column;gap:16px;margin-bottom:24px}.vr-hero{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}.vr-title{font-size:20px;font-weight:600}.vr-sub{color:#6e6e69;font-size:12px}.vr-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.vr-kpi,.vr-chart{border:1px solid #e5e5e2;border-radius:7px;padding:13px;background:#fff}.vr-kpi .v{font-family:monospace;font-size:20px;font-weight:600}.vr-kpi .l,.vr-chart p{font-size:11px;color:#6e6e69}.vr-chart h3{font-size:13px;margin:0 0 3px}.vr-chart p{margin:0 0 8px}.vr-chart svg{width:100%;height:auto}.vr-quality{display:flex;align-items:center;gap:14px;min-height:160px}.vr-ring{width:100px;height:100px;border-radius:50%;display:grid;place-items:center;position:relative}.vr-ring:after{content:'';position:absolute;inset:10px;border-radius:50%;background:#fff}.vr-ring b{position:relative;z-index:1;font-family:monospace;font-size:25px}.vr-quality-copy{font-size:11px;color:#6e6e69}.vr-findings{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.vr-finding{border:1px solid #e5e5e2;border-radius:6px;padding:9px}.vr-finding .tag{font-size:9px;color:#0b5259;background:#e7f1f2;padding:2px 5px;border-radius:3px}.vr-finding .tx{font-size:11.5px;margin-top:5px}.vr-finding .ev{font-family:monospace;font-size:9.5px;color:#6e6e69;margin-top:3px}@media(max-width:800px){.vr-hero{grid-template-columns:1fr}.vr-kpis{grid-template-columns:repeat(2,1fr)}}
+/* auth */
+#setup,#auth{min-height:100vh;display:none;place-items:center;padding:30px}
+#setup.on,#auth.on{display:grid}
+.auth-card{width:100%;max-width:400px}
+.auth-card .brand{justify-content:center;margin-bottom:22px;font-size:17px}
+.auth-tabs{display:flex;gap:4px;background:var(--surface-2);border-radius:8px;padding:4px;margin-bottom:18px}
+.auth-tabs button{flex:1;border:none;background:none;padding:8px;border-radius:6px;font-size:13px;font-weight:600;color:var(--muted)}
+.auth-tabs button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.auth-err{background:var(--red-wash);color:var(--red);font-size:12.5px;padding:9px 12px;border-radius:6px;margin-bottom:12px;display:none}
+.auth-err.on{display:block}
+.auth-note{font-size:12px;color:var(--muted);text-align:center;margin-top:14px}
+.auth-or{display:flex;align-items:center;gap:10px;color:var(--faint);font-size:11.5px;margin:14px 0}
+.auth-or::before,.auth-or::after{content:"";flex:1;height:1px;background:var(--line)}
+.gbtn{width:100%;justify-content:center;gap:9px}
+/* dashboard */
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.acard{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);display:flex;flex-direction:column;overflow:hidden}
+.acard .ab{padding:16px 18px;flex:1}
+.acard .an{font-weight:600;font-size:15px;margin-bottom:3px}
+.acard .ad{font-family:var(--num);font-size:12px;color:var(--muted)}
+.acard .astats{display:flex;gap:16px;margin-top:14px}
+.acard .astats div .n{font-family:var(--num);font-weight:600;font-size:16px}
+.acard .astats div .l{font-size:11px;color:var(--muted)}
+.acard .af{border-top:1px solid var(--line);padding:10px 14px;display:flex;gap:8px;background:var(--paper)}
+.slot-empty{border:1.5px dashed var(--line-strong);border-radius:var(--radius);display:grid;place-items:center;min-height:190px;color:var(--muted);text-align:center;padding:20px}
+.usage{display:flex;align-items:center;gap:10px;font-size:13px}
+.usage .dots{display:flex;gap:5px}
+.usage .dots i{width:22px;height:8px;border-radius:4px;background:var(--surface-2);display:block}
+.usage .dots i.on{background:var(--accent)}
+.uinfo{display:flex;align-items:center;gap:9px}
+.uava{width:30px;height:30px;border-radius:7px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:600;font-size:13px;flex:none}
+
+</style>${reportHTML(m)}`;download(m.name.replace(/\.[^.]+$/,'')+'_report.html',doc,'text/html');}
+  else{const md=htmlToMd(reportHTML(m));download(m.name.replace(/\.[^.]+$/,'')+'_report.md',md,'text/markdown');}
+  toast('Report exported');
+}
+function htmlToMd(html){return html
+  .replace(/<h1>(.*?)<\/h1>/g,'# $1\n')
+  .replace(/<h2>(.*?)<\/h2>/g,'\n## $1\n')
+  .replace(/<h3>(.*?)<\/h3>/g,'\n### $1\n')
+  .replace(/<div class="meta">(.*?)<\/div>/g,'*$1*\n')
+  .replace(/<li>(.*?)<\/li>/g,'- $1\n')
+  .replace(/<\/?ul>/g,'')
+  .replace(/<tr>(.*?)<\/tr>/g,(m,c)=>{const cells=[...c.matchAll(/<t[dh]>(.*?)<\/t[dh]>/g)].map(x=>x[1]);return '| '+cells.join(' | ')+' |';})
+  .replace(/<table>/g,'\n').replace(/<\/table>/g,'\n')
+  .replace(/<p>(.*?)<\/p>/g,'\n$1\n')
+  .replace(/<b>(.*?)<\/b>/g,'**$1**')
+  .replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"')
+  .replace(/\n{3,}/g,'\n\n').trim();}
+
+/* ---------- MODAL ---------- */
+function openModal(title,body,actions=[]){
+  $('#modal-content').innerHTML=`<div class="modal-h"><h3>${title}</h3><button class="x" onclick="closeModal()">×</button></div>
+    <div class="modal-b">${body}</div>
+    <div class="modal-f"><button class="btn btn-sm" onclick="closeModal()">Cancel</button>${actions.map((a,i)=>`<button class="btn btn-sm ${a.cls||''}" id="ma${i}">${a.t}</button>`).join('')}</div>`;
+  actions.forEach((a,i)=>$('#ma'+i).onclick=a.fn);
+  $('#modal').classList.add('on');
+}
+function closeModal(){$('#modal').classList.remove('on');}
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
+
+/* ============================================================
+   SAMPLE DATASETS (small, realistic, with intentional issues)
+   ============================================================ */
+const SAMPLES={sales:buildSalesSample(),churn:buildChurnSample()};
+function buildSalesSample(){
+  const cats=['Electronics','Apparel','Home & Kitchen','Grocery','Personal Care'];
+  const cities=['Visakhapatnam','Guntur','Vijayawada','Tirupati','Nellore'];
+  const prods={Electronics:['Headphones','Smart TV','Laptop','Charger'],Apparel:['Saree','Kurta','Jeans','T-Shirt'],
+    'Home & Kitchen':['Mixer','Cookware','Water Bottle','Lamp'],Grocery:['Rice 5kg','Sugar 1kg','Oil 1L','Tea'],
+    'Personal Care':['Shampoo','Soap','Sunscreen','Lotion']};
+  let rows=[['order_id','date','city','category','product','units','unit_price','discount_pct','revenue']];
+  let seed=7;const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280;};
+  const start=new Date('2026-01-01');
+  for(let i=0;i<600;i++){
+    const cat=cats[Math.floor(rnd()*cats.length)];const pr=prods[cat][Math.floor(rnd()*4)];
+    const d=new Date(start.getTime()+Math.floor(rnd()*180)*86400000);
+    const units=1+Math.floor(rnd()*4);
+    const base={Electronics:8000,Apparel:1500,'Home & Kitchen':2200,Grocery:400,'Personal Care':350}[cat];
+    let price=Math.round(base*(0.6+rnd()*0.9));
+    const disc=[0,0,0,5,10,15,20][Math.floor(rnd()*7)];
+    // trend: electronics declines, apparel grows
+    const monthFactor=cat==='Electronics'?(1-d.getMonth()*0.06):cat==='Apparel'?(1+d.getMonth()*0.05):1;
+    const rev=Math.round(units*price*(1-disc/100)*monthFactor);
+    // inject a few outliers + missing
+    if(i===40||i===120)price=price*12;
+    const cityV=(i%37===0)?'':cities[Math.floor(rnd()*cities.length)];
+    const discV=(i%53===0)?'':disc;
+    rows.push([1000+i,d.toISOString().slice(0,10),cityV,cat,pr,units,price,discV,rev]);
+  }
+  // duplicates
+  rows.push(rows[5].slice());rows.push(rows[12].slice());
+  return rows.map(r=>r.join(',')).join('\n');
+}
+
+/* ============================================================
+   BACKEND — Supabase auth, accounts, persistence, SSOT report
+   Set your project URL + anon key below (Supabase -> Settings -> API).
+   ============================================================ */
+const CONFIG = {
+  SUPABASE_URL:      'https://revgvcklkozqrizurann.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJldmd2Y2tsa296cXJpenVyYW5uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk2NTAwMTIsImV4cCI6MjEwNTIyNjAxMn0.zDvXzOPhNkMwWwrwuHO-pswBsjeuyv0vXzS7jVDZhCM'
+};
+
+let sb=null, currentUser=null, currentProfile=null, currentAnalysisMeta=null, savedView=null, authMode='signin';
+
+function backendConfigured(){return CONFIG.SUPABASE_URL && !/^YOUR_/.test(CONFIG.SUPABASE_URL) && CONFIG.SUPABASE_ANON_KEY && !/^YOUR_/.test(CONFIG.SUPABASE_ANON_KEY);}
+
+function showScreen(name){
+  ['landing','setup','auth','app'].forEach(s=>{const el=document.getElementById(s);if(!el)return;
+    if(s==='app'){el.style.display=name==='app'?'block':'none';}
+    else{el.classList.toggle('on',s===name);el.style.display=(s==='landing')?(name==='landing'?'flex':'none'):(s===name?'grid':'none');}});
+}
+
+async function initBackend(){
+  if(!window.supabase){setTimeout(initBackend,150);return;}
+  if(!backendConfigured()){showScreen('setup');return;}
+  try{
+    sb=window.supabase.createClient(CONFIG.SUPABASE_URL,CONFIG.SUPABASE_ANON_KEY);
+    const {data:{session}}=await sb.auth.getSession();
+    if(session&&session.user){currentUser=session.user;await afterLogin();}
+    else showScreen('landing');
+    sb.auth.onAuthStateChange((_e,s)=>{if(!s&&currentUser){currentUser=null;showScreen('auth');}});
+  }catch(e){showScreen('setup');}
+}
+
+/* ---------- AUTH ---------- */
+function openAuth(mode){switchAuth(mode||'signin');showScreen('auth');}
+function switchAuth(mode){
+  authMode=mode;
+  document.getElementById('tab-signin').classList.toggle('on',mode==='signin');
+  document.getElementById('tab-signup').classList.toggle('on',mode==='signup');
+  document.getElementById('su-fields').style.display=mode==='signup'?'block':'none';
+  document.getElementById('au-submit').textContent=mode==='signup'?'Create account':'Sign in';
+  document.getElementById('au-switchnote').innerHTML=mode==='signup'
+    ? 'Already have an account? <a href="#" onclick="switchAuth(\'signin\');return false">Sign in</a>'
+    : 'New here? <a href="#" onclick="switchAuth(\'signup\');return false">Create an account</a>';
+  authErr('');
+}
+function authErr(msg){const e=document.getElementById('auth-err');e.textContent=msg;e.classList.toggle('on',!!msg);}
+async function submitAuth(){
+  const email=document.getElementById('au-email').value.trim();
+  const pass=document.getElementById('au-pass').value;
+  if(!email||!pass){authErr('Enter your email and password.');return;}
+  const btn=document.getElementById('au-submit');btn.disabled=true;const label=btn.textContent;btn.textContent='Please wait…';
+  try{
+    if(authMode==='signup'){
+      const full_name=document.getElementById('au-name').value.trim();
+      const team=document.getElementById('au-team').value.trim();
+      const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{full_name,team}}});
+      if(error)throw error;
+      if(data.session){currentUser=data.user;await afterLogin();}
+      else{authErr('Account created. Check your email to confirm, then sign in.');switchAuth('signin');}
+    }else{
+      const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+      if(error)throw error;
+      currentUser=data.user;await afterLogin();
+    }
+  }catch(e){authErr(e.message||'Authentication failed.');}
+  finally{btn.disabled=false;btn.textContent=label;}
+}
+async function doSignOut(){try{await sb.auth.signOut();}catch(e){}currentUser=null;state=null;killCharts();showScreen('landing');}
+async function signInWithGoogle(){authErr('');try{
+  const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+window.location.pathname}});
+  if(error)throw error;
+}catch(e){authErr(e.message||'Google sign-in failed. Enable the Google provider in Supabase → Authentication.');}}
+
+async function afterLogin(){
+  await ensureProfile();
+  showScreen('app');
+  const md=currentUser.user_metadata||{};
+  const nm=(currentProfile&&currentProfile.full_name)||md.full_name||md.name||currentUser.email.split('@')[0];
+  document.getElementById('u-name').textContent=nm;
+  document.getElementById('u-email').textContent=currentUser.email;
+  document.getElementById('u-ava').textContent=(nm[0]||'?').toUpperCase();
+  state=null;
+  go('dashboard');
+}
+async function ensureProfile(){
+  try{
+    let {data,error}=await sb.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
+    const md=currentUser.user_metadata||{};
+    if(!data){await sb.from('profiles').insert({id:currentUser.id,full_name:md.full_name||md.name||'',team:md.team||''});
+      ({data}=await sb.from('profiles').select('*').eq('id',currentUser.id).maybeSingle());}
+    currentProfile=data||{full_name:'',team:''};
+  }catch(e){currentProfile={full_name:'',team:''};}
+}
+
+/* ---------- DASHBOARD ---------- */
+async function loadAnalyses(){
+  try{const {data,error}=await sb.from('analyses').select('id,name,dataset_name,rows,cols,quality,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false});
+    if(error)throw error;return data||[];}catch(e){toast('Could not load analyses');return [];}
+}
+async function viewDashboard(V){
+  V.innerHTML=`<div class="view"><div class="view-head spread"><div><h2>Your analyses</h2><p>Each account can keep 2 saved analyses. Delete one to free a slot for a new dataset.</p></div>
+    <button class="btn btn-primary btn-sm" id="new-btn" onclick="newAnalysis()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New analysis</button></div>
+    <div id="dash-mount"><div class="mut" style="font-size:13px">Loading…</div></div></div>`;
+  const list=await loadAnalyses();
+  updateUsage(list.length);
+  const slots=[];
+  list.forEach(a=>slots.push(`<div class="acard"><div class="ab">
+      <div class="an">${esc(a.name)}</div><div class="ad">${esc(a.dataset_name||'')} · ${new Date(a.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
+      <div class="astats"><div><span class="n">${fmtInt(a.rows)}</span><span class="l">rows</span></div><div><span class="n">${a.cols??'—'}</span><span class="l">columns</span></div><div><span class="n">${a.quality??'—'}</span><span class="l">quality</span></div></div>
+    </div><div class="af"><button class="btn btn-sm btn-primary" onclick="openAnalysis('${a.id}')">Open</button><button class="btn btn-sm" onclick="openReport('${a.id}')">Report</button><button class="btn btn-sm" style="margin-left:auto" onclick="deleteAnalysis('${a.id}','${esc(a.name).replace(/'/g,"")}')">Delete</button></div></div>`));
+  if(list.length<2)slots.push(`<div class="slot-empty"><div><div style="font-weight:600;color:var(--ink);margin-bottom:6px">Empty slot</div>Upload a dataset to fill it.<div style="margin-top:12px"><button class="btn btn-sm" onclick="newAnalysis()">New analysis</button></div></div></div>`);
+  document.getElementById('dash-mount').innerHTML=`<div class="dash-grid">${slots.join('')}</div>`;
+  document.getElementById('new-btn').disabled=list.length>=2;
+  if(list.length>=2)document.getElementById('new-btn').title='Delete an analysis first';
+}
+function updateUsage(n){
+  document.getElementById('u-count').textContent=n+' / 2';
+  const dots=document.querySelectorAll('#u-dots i');dots.forEach((d,i)=>d.classList.toggle('on',i<n));
+}
+function newAnalysis(){document.getElementById('file-input').click();}
+async function deleteAnalysis(id,name){
+  openModal('Delete analysis',`<p class="mut" style="font-size:13.5px">Delete <b>${esc(name)}</b>? This frees a slot but cannot be undone.</p>`,
+   [{t:'Delete',cls:'btn-primary',fn:async()=>{closeModal();try{
+      const {data}=await sb.from('analyses').select('storage_path').eq('id',id).single();
+      if(data&&data.storage_path){try{await sb.storage.from('datasets').remove([data.storage_path]);}catch(_){}}
+      const {error}=await sb.from('analyses').delete().eq('id',id);if(error)throw error;
+      toast('Analysis deleted — slot freed');go('dashboard');}catch(e){toast('Delete failed');}}}]);
+}
+
+/* ---------- SAVE / OPEN ---------- */
+function currentSampleRows(cap=400){return state.working.slice(0,cap).map(r=>{const o={};state.cols.forEach(c=>o[c]=r[c]);return o;});}
+function promptSave(){
+  if(!state){toast('Nothing to save');return;}
+  const defName=state.name.replace(/\.[^.]+$/,'');
+  openModal('Save analysis',`
+    <div class="field-row"><label>Analysis name</label><input type="text" id="sv-name" value="${esc(defName)}"></div>
+    <div class="field-row"><label>Business question / context (optional)</label><input type="text" id="sv-ctx" placeholder="e.g. Which product categories should we back this quarter?"></div>
+    <p class="mut" style="font-size:12px;margin:2px 0 0">Uploads the cleaned dataset plus its report, so you can reopen the full workspace later. Counts toward your 2-analysis limit.</p>`,
+    [{t:'Save',cls:'btn-primary',fn:saveAnalysis}]);
+}
+async function saveAnalysis(){
+  const name=(document.getElementById('sv-name').value||'Untitled').trim();
+  const context=document.getElementById('sv-ctx').value.trim();
+  const model=buildReportModel();
+  const payload={
+    context,
+    profileCols:model.p.columns.map(c=>({name:c.name,type:c.type,missing:c.missing,missingPct:c.missingPct,unique:c.unique,stats:c.stats?{mean:c.stats.mean,median:c.stats.median,std:c.stats.std,min:c.stats.min,max:c.stats.max,q1:c.stats.q1,q3:c.stats.q3,skew:c.stats.skew,outliers:c.stats.outliers}:null,catTop:c.cat?c.cat.top.slice(0,6):null})),
+    N:model.N, cols:model.cols, quality:model.q, duplicates:model.p.duplicates,
+    insights:model.ins, log:model.log, team:currentProfile?currentProfile.team:'',
+    author:currentProfile?currentProfile.full_name:currentUser.email, colOrder:state.cols.slice()
+  };
+  const btn=document.getElementById('ma0');if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  let path=null;
+  try{
+    // 1) upload the cleaned dataset to the user's private Storage folder
+    const csv=Papa.unparse(state.working.map(r=>{const o={};state.cols.forEach(c=>o[c]=r[c]);return o;}));
+    path=currentUser.id+'/'+crypto.randomUUID()+'.csv';
+    const up=await sb.storage.from('datasets').upload(path,new Blob([csv],{type:'text/csv'}),{contentType:'text/csv',upsert:false});
+    if(up.error)throw up.error;
+    // 2) insert the analysis row (DB trigger enforces the 2-per-user cap)
+    const row={user_id:currentUser.id,name,dataset_name:state.name,rows:model.N,cols:model.cols,quality:model.q.score,storage_path:path,report:payload};
+    const {error}=await sb.from('analyses').insert(row);
+    if(error){
+      await sb.storage.from('datasets').remove([path]); // don't orphan the file
+      if((error.message||'').includes('ANALYSIS_LIMIT_REACHED'))toast('Limit reached — delete an analysis to free a slot');
+      else toast('Save failed: '+error.message);
+      if(btn){btn.disabled=false;btn.textContent='Save';}
+      return;
+    }
+    state.saved=true;closeModal();toast('Analysis saved');go('dashboard');
+  }catch(e){
+    if(path){try{await sb.storage.from('datasets').remove([path]);}catch(_){}}
+    toast('Save failed: '+(e.message||''));if(btn){btn.disabled=false;btn.textContent='Save';}
+  }
+}
+async function openAnalysis(id){
+  try{
+    const {data,error}=await sb.from('analyses').select('*').eq('id',id).single();
+    if(error)throw error;
+    savedView={meta:data,model:data.report};
+    if(!data.storage_path){go('savedreport');return;} // legacy row with no file
+    toast('Loading dataset…');
+    const dl=await sb.storage.from('datasets').download(data.storage_path);
+    if(dl.error)throw dl.error;
+    const text=await dl.data.text();
+    const res=Papa.parse(text,{header:true,skipEmptyLines:'greedy'});
+    const cols=(res.meta.fields||[]).filter(c=>c&&c.trim()!=='');
+    const prof=profile(res.data,cols);
+    state={name:data.dataset_name||data.name,sizeMB:text.length/1048576,delim:',',rawRows:res.data,cols,
+      working:res.data.map(r=>({...r})),origProfile:prof,profile:prof,log:(data.report&&data.report.log)||[],history:[],view:'overview',saved:true};
+    buildApp();
+    currentAnalysisMeta={id:data.id,name:data.name};
+  }catch(e){toast('Could not open analysis');}
+}
+async function openReport(id){
+  try{const {data,error}=await sb.from('analyses').select('*').eq('id',id).single();
+    if(error)throw error;savedView={meta:data,model:data.report};go('savedreport');
+  }catch(e){toast('Could not open report');}
+}
+
+/* ---------- SSOT REPORT (team-style) ---------- */
+function ssotCanvas(m){
+  const q=m.quality;const topCat=(m.profileCols.find(c=>c.type==='categorical'&&c.catTop&&c.catTop.length)||{});
+  const question=m.context|| 'Which parts of this dataset need attention, and what do the numbers recommend?';
+  return [
+    ['Situation','Dataset "'+esc(m0name(m))+'" with '+fmtInt(m.N)+' records across '+m.cols+' columns.'],
+    ['Complication','Decisions are being made without a consolidated, quality-checked view of the data — issues and patterns are not yet visible.'],
+    ['Question',esc(question)],
+    ['SSOT (single source of truth)','One cleaned, validated dataset. Every figure in this report is derived from that same profiled data — quality score '+q.score+'/100, '+fmtInt(q.totalMissing)+' missing cells, '+fmtInt(m.duplicates)+' duplicate rows.'],
+    ['Success','A reader can name what to fix and what the data implies, with a figure attached, from a single page.'],
+    ['Primary stakeholder',(m.author?esc(m.author):'The analyst')+(m.team?(' · '+esc(m.team)):'')]
+  ];
+}
+function m0name(m){return (savedView&&savedView.meta&&savedView.meta.dataset_name)||(state&&state.name)||'dataset';}
+function ssotReportHTML(m){
+  const numeric=m.profileCols.filter(c=>c.stats);
+  const q=m.quality;
+  const numRows=numeric.map(c=>`<tr><td>${esc(c.name)}</td><td>${fmtNum(c.stats.mean)}</td><td>${fmtNum(c.stats.median)}</td><td>${fmtNum(c.stats.std)}</td><td>${fmtNum(c.stats.min)}</td><td>${fmtNum(c.stats.max)}</td><td>${c.stats.outliers}</td></tr>`).join('');
+  const canvas=ssotCanvas(m).map(r=>`<tr><td style="width:170px;font-weight:600">${r[0]}</td><td>${r[1]}</td></tr>`).join('');
+  return `<h1>Category Intelligence — Analysis Report</h1>
+  <div class="meta">${esc(m0name(m))} · ${fmtInt(m.N)} rows × ${m.cols} columns · ${m.author?esc(m.author):''}${m.team?(' · '+esc(m.team)):''} · ${new Date().toLocaleDateString('en-US')}</div>
+
+  <h2>At a glance</h2>
+  <table><tr><th>Metric</th><th>Value</th></tr>
+    <tr><td>Records</td><td>${fmtInt(m.N)}</td></tr>
+    <tr><td>Columns</td><td>${m.cols} (${numeric.length} numeric)</td></tr>
+    <tr><td>Data-quality score</td><td>${q.score}/100</td></tr>
+    <tr><td>Missing cells</td><td>${fmtInt(q.totalMissing)}</td></tr>
+    <tr><td>Duplicate rows</td><td>${fmtInt(m.duplicates)}</td></tr></table>
+
+  <h2>1. Problem framing (SSOT canvas)</h2>
+  <table>${canvas}</table>
+
+  <h2>2. Data quality assessment</h2>
+  <p>The quality score starts at 100 and subtracts capped, weighted penalties for measurable issues:</p>
+  <table><tr><th>Factor</th><th>Detail</th><th>Penalty</th></tr>${q.parts.map(p=>`<tr><td>${p.t}</td><td>${p.detail}</td><td>${p.pen>0?'−'+p.pen:'0'}</td></tr>`).join('')}</table>
+
+  <h2>3. Cleaning process</h2>
+  ${m.log&&m.log.length?`<ul>${m.log.map(l=>`<li>${esc(l.msg)}</li>`).join('')}</ul>`:'<p>No transformations were required; the dataset passed all checks in its original form.</p>'}
+
+  <h2>4. Key findings</h2>
+  ${m.insights&&m.insights.length?`<ul>${m.insights.map(i=>`<li>${esc(i.tx)} <span style="color:#6e6e69;font-size:11.5px">(${esc(i.ev)})</span></li>`).join('')}</ul>`:'<p>No statistically meaningful patterns were detected from the available variables.</p>'}
+
+  <h2>5. Statistical summary (numeric columns)</h2>
+  ${numeric.length?`<table><tr><th>Column</th><th>Mean</th><th>Median</th><th>Std</th><th>Min</th><th>Max</th><th>Outliers</th></tr>${numRows}</table>`:'<p>No numeric columns in this dataset.</p>'}
+
+  <h2>6. Recommendations</h2>
+  <ul>
+    ${q.totalMissing>0?'<li>Resolve missing values in the flagged columns before modelling — impute or collect the source data.</li>':''}
+    ${m.duplicates>0?'<li>Remove the '+fmtInt(m.duplicates)+' duplicate rows so they do not double-count in aggregates.</li>':''}
+    <li>Validate flagged outliers against source systems before treating them as errors.</li>
+    <li>Investigate the strongest relationships with a modelling or hypothesis-testing step.</li>
+  </ul>
+
+  <h2>7. Limitations</h2>
+  <ul>
+    <li>Correlations describe association only and do not establish causation.</li>
+    <li>Outliers were detected with the 1.5×IQR rule and flagged, not confirmed as errors.</li>
+    <li>Type inference is heuristic; mixed-format columns may be classified conservatively.</li>
+    <li>Findings reflect the supplied dataset and may not generalise to the full population.</li>
+  </ul>`;
+}
+function viewSavedReport(V){
+  const m=savedView.model;
+  V.innerHTML=`<div class="view">
+    <div class="view-head spread no-print"><div><h2>${esc(savedView.meta.name)}</h2><p>Saved SSOT report — generated from the stored analysis.</p></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="go('dashboard')">← Dashboard</button>
+        <button class="btn btn-sm" onclick="exportSSOT('html')">HTML</button>
+        <button class="btn btn-sm" onclick="window.print()">Print / PDF</button>
+      </div></div>
+    <div class="report" id="report-body">${ssotReportHTML(m)}</div>
+  </div>`;
+}
+function exportSSOT(fmt){
+  const m=savedView.model;const name=(savedView.meta.name||'report').replace(/[^\w\-]+/g,'_');
+  const doc=`<!doctype html><meta charset=utf-8><title>${esc(savedView.meta.name)}</title><style>body{font-family:'IBM Plex Sans',system-ui,sans-serif;max-width:820px;margin:40px auto;padding:0 20px;color:#1a1a19;line-height:1.6}h1{font-size:26px}h2{font-size:17px;border-bottom:1px solid #e5e5e2;padding-bottom:6px;margin-top:26px}table{border-collapse:collapse;width:100%;font-size:13px;margin:10px 0}td,th{border:1px solid #e5e5e2;padding:6px 10px;text-align:left;vertical-align:top}th{background:#f4f4f2}.meta{color:#6e6e69;font-size:13px}ul{padding-left:20px}</style>${ssotReportHTML(m)}`;
+  download(name+'_SSOT_report.html',doc,'text/html');toast('Report exported');
+}
+
+/* also add an SSOT export to the live workspace report view */
+const _viewReport=viewReport;
+viewReport=function(V){
+  _viewReport(V);
+  const bar=V.querySelector('.view-head > div:last-child');
+  if(bar){const b=document.createElement('button');b.className='btn btn-sm';b.textContent='SSOT report';
+    b.onclick=()=>{const model=buildReportModel();savedView={meta:{name:state.name,dataset_name:state.name},model:{
+      context:'',profileCols:model.p.columns.map(c=>({name:c.name,type:c.type,missing:c.missing,missingPct:c.missingPct,unique:c.unique,stats:c.stats?{mean:c.stats.mean,median:c.stats.median,std:c.stats.std,min:c.stats.min,max:c.stats.max,q1:c.stats.q1,q3:c.stats.q3,skew:c.stats.skew,outliers:c.stats.outliers}:null,catTop:c.cat?c.cat.top.slice(0,6):null})),
+      N:model.N,cols:model.cols,quality:model.q,duplicates:model.p.duplicates,insights:model.ins,log:model.log,
+      team:currentProfile?currentProfile.team:'',author:currentProfile?currentProfile.full_name:(currentUser?currentUser.email:'')}};go('savedreport');};
+    bar.insertBefore(b,bar.firstChild);}
+};
+
+/* ---------- PROFILE ---------- */
+async function viewProfile(V){
+  const p=currentProfile||{full_name:'',team:''};
+  const list=await loadAnalyses();
+  V.innerHTML=`<div class="view">
+    <div class="view-head"><h2>Profile</h2><p>Your account details. Your name and team appear on the SSOT reports you generate.</p></div>
+    <div class="grid" style="grid-template-columns:1fr 300px">
+      <div class="panel"><div class="panel-h"><h3>Account</h3></div><div class="panel-b">
+        <div class="field-row"><label>Full name</label><input type="text" id="pf-name" value="${esc(p.full_name||'')}"></div>
+        <div class="field-row"><label>Team</label><input type="text" id="pf-team" value="${esc(p.team||'')}"></div>
+        <div class="field-row"><label>Email</label><input type="text" value="${esc(currentUser.email)}" disabled></div>
+        <button class="btn btn-primary btn-sm" onclick="saveProfile()">Save changes</button>
+      </div></div>
+      <div class="panel"><div class="panel-h"><h3>Usage</h3></div><div class="panel-b">
+        <div class="kpi" style="border:none;padding:0"><div class="n">${list.length} / 2</div><div class="l">Saved analyses</div></div>
+        <div class="side-foot" style="border:none;padding:14px 0 0"><div class="usage"><span class="mut" style="font-size:12px">Slots</span><div class="dots">${[0,1].map(i=>`<i class="${i<list.length?'on':''}"></i>`).join('')}</div></div></div>
+        <button class="btn btn-sm" style="margin-top:14px;width:100%;justify-content:center" onclick="doSignOut()">Sign out</button>
+      </div></div>
+    </div></div>`;
+}
+async function saveProfile(){
+  const full_name=document.getElementById('pf-name').value.trim();
+  const team=document.getElementById('pf-team').value.trim();
+  try{const {error}=await sb.from('profiles').update({full_name,team}).eq('id',currentUser.id);if(error)throw error;
+    currentProfile={...currentProfile,full_name,team};
+    document.getElementById('u-name').textContent=full_name||currentUser.email.split('@')[0];
+    document.getElementById('u-ava').textContent=((full_name||currentUser.email)[0]||'?').toUpperCase();
+    toast('Profile saved');}catch(e){toast('Could not save profile');}
+}
+
+/* ---------- boot ---------- */
+window.addEventListener('DOMContentLoaded',initBackend);
+if(document.readyState!=='loading')initBackend();
+
+function buildChurnSample(){
+  let rows=[['customer_id','signup_date','plan','monthly_fee','tenure_months','support_tickets','region','churned']];
+  const plans=['Basic','Standard','Premium'];const regions=['North','South','East','West'];
+  let seed=13;const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280;};
+  for(let i=0;i<500;i++){
+    const plan=plans[Math.floor(rnd()*3)];const fee={Basic:9,Standard:19,Premium:39}[plan];
+    const tenure=1+Math.floor(rnd()*47);const tickets=Math.floor(rnd()*8);
+    const churnP=0.12+tickets*0.05-tenure*0.004;const churned=rnd()<churnP?'Yes':'No';
+    const region=(i%41===0)?'':regions[Math.floor(rnd()*4)];
+    const feeV=(i%29===0)?'':fee;
+    const d=new Date(2024,0,1+Math.floor(rnd()*730));
+    rows.push([`C${5000+i}`,d.toISOString().slice(0,10),plan,feeV,tenure,tickets,region,churned]);
+  }
+  rows.push(rows[3].slice());
+  return rows.map(r=>r.join(',')).join('\n');
+}
+</script>
+</body>
+</html>
