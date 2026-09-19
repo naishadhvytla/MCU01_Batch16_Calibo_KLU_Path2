@@ -94,7 +94,7 @@ Every chart, table and figure derives from **one** cleaned DataFrame built once 
 
 ## Clarity — the web app
 
-*Built by **Naishadh Vytla** beyond the assigned MUC01 scope.*
+*Built by Naishadh Vytla beyond the assigned MUC01 scope.*
 
 The same workflow, generalised to any dataset: **upload → profile → clean → explore → report → export.**
 
