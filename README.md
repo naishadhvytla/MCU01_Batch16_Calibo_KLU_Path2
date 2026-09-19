@@ -45,7 +45,7 @@ A fourth, negative finding matters just as much: **there is no dead SKU.** Withi
 │   └── Batch16_MUC01_KLU_Summary.docx          # Team documentation & insight report
 ├── reports/
 │   ├── Batch16_MUC01_KLU_Individual_Report_Naishadh_Vytla.docx
-│   ├── Batch16_MUC01_KLU_Individual_Report_Adi_Seshu.docx
+│   ├── Batch16_MUC01_KLU_Individual_Report_AdiSeshu.docx
 │   ├── Batch16_MUC01_KLU_Individual_Report_Sushmitha.docx
 │   └── Batch16_MUC01_KLU_Individual_Report_Nakul_Sriraj.docx
 ├── deck/
