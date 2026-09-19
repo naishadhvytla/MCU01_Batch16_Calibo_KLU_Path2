@@ -92,44 +92,28 @@ Every chart, table and figure derives from **one** cleaned DataFrame built once 
 
 ---
 
-## Clarity — the web app
+### Clarity — Web App
 
-*Built by Naishadh Vytla beyond the assigned MUC01 scope.*
+**Built by Naishadh Vytla and team beyond the MUC01 scope.**
 
-The same workflow, generalised to any dataset: **upload → profile → clean → explore → report → export.**
+A general-purpose EDA platform with the workflow:
 
-**[clarityeda.netlify.app](https://clarityeda.netlify.app/)**
+**Upload → Profile → Clean → Explore → Report → Export**
 
-- **Upload** CSV, TSV, JSON or XLSX
-- **Profiling** with a transparent data-quality score — every penalty is itemised, no black box
-- **Cleaning** for duplicates, missing values, mixed types, constant/empty columns, whitespace and IQR outliers — each with preview, apply and undo. Nothing changes without approval; outliers are flagged, never silently deleted
-- **EDA** with chart types auto-selected from each column's inferred type
-- **Correlation** matrix with strongest-relationship ranking
-- **Insights** that are deterministic and evidence-linked — if nothing is statistically meaningful, it says so rather than inventing
-- **SSOT reports** in the same format as this project's team report, exportable to HTML or PDF
-- **Accounts** via email/password or Google, with 2 saved analyses per user (delete one to free a slot)
+* Supports **CSV, TSV, JSON & XLSX**
+* Transparent **data-quality scoring**
+* Cleaning with **preview, apply & undo**; outliers are flagged, not deleted
+* Automatic **EDA charts** based on column types
+* **Correlation analysis** with strongest relationships
+* **Deterministic, evidence-linked insights**
+* Generates **SSOT reports** in HTML/PDF
+* User accounts with **2 saved analyses per user**
+* **Stack:** Single HTML + Supabase + Netlify + CDN libraries
+* **No backend server required**
+* Supports files up to roughly **50–100 MB** in-browser
 
-### Stack
+**Link:** [Clarity EDA](https://clarityeda.netlify.app/?utm_source=chatgpt.com)
 
-Single static HTML file — no build step, no server of your own. [Supabase](https://supabase.com) handles auth, Postgres and file storage; deployed on Netlify.
-
-Libraries load from CDN at runtime: Papa Parse (CSV), SheetJS (XLSX), Chart.js, Supabase JS.
-
-### Deploying your own instance
-
-1. **Create a Supabase project** → **SQL Editor** → paste all of `app/schema.sql` → **Run**. This creates the `profiles` and `analyses` tables, row-level security so users only ever see their own data, the 2-analysis limit (enforced by a database trigger, not just the UI), and the private `datasets` storage bucket.
-2. **Project Settings → API** → copy the **Project URL** and **anon public** key.
-3. In `app/index.html`, find the `CONFIG` block near the bottom of the `<script>` and paste both values in.
-4. **Authentication → URL Configuration** → set **Site URL** to your deployed URL; add `http://localhost:8000` to **Redirect URLs** for local testing.
-5. *(Optional)* **Authentication → Providers → Google** → enable it and add a Google OAuth client ID/secret. The Supabase callback URL shown on that page must be listed as an **Authorized redirect URI** in Google Cloud Console.
-6. Test locally with `python3 -m http.server 8000`, then open `http://localhost:8000/app/index.html`. Auth requires `http(s)://` — opening the file directly via `file://` will not work.
-7. Deploy: rename `index.html` and drop it on Netlify, or point any static host at it.
-
-> The `anon` key is designed to be public and safe in frontend code — row-level security is what protects the data. Never put the `service_role` key in this file.
-
-**Known limits:** in-browser processing suits files up to roughly 50–100MB; Parquet is unsupported (it needs a server-side reader); Supabase's free tier caps a single stored file at 50MB.
-
----
 
 ## Future work
 
