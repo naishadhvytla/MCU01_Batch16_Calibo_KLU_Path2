@@ -94,7 +94,7 @@ Every chart, table and figure derives from **one** cleaned DataFrame built once 
 
 ### Clarity — Web App
 
-**Built by Naishadh Vytla and team for MUC01 scope.**
+**Built by Naishadh Vytla and team for MUC01 .**
 
 A general-purpose EDA platform with the workflow:
 
@@ -127,7 +127,7 @@ A general-purpose EDA platform with the workflow:
 
 | Member | Role |
 | --- | --- |
-| **Naishadh Vytla** | Data foundation & SSOT · notebook assembly · Clarity app |
+| **Naishadh Vytla** | Data foundation & SSOT · notebook assembly · |
 | **Adi Seshu** | Product-level analysis · chart consistency · QA |
 | **Sushmitha** | Promotion effectiveness · timing analysis · insight report |
 | **Nakul Sriraj** | Business synthesis · stakeholder briefing · QA |
