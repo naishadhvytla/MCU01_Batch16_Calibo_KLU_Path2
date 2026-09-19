@@ -94,7 +94,7 @@ Every chart, table and figure derives from **one** cleaned DataFrame built once 
 
 ### Clarity — Web App
 
-**Built by Naishadh Vytla and team for MUC01 .**
+Built by **Naishadh Vytla** for MUC01 .
 
 A general-purpose EDA platform with the workflow:
 
