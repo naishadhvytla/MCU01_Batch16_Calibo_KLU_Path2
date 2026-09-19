@@ -4,7 +4,7 @@
 
 Six months of retail transaction data turned into a supplier-review decision — plus **Clarity**, a live web app that runs the same cleaning-and-EDA workflow on any dataset.
 
-**Live app → [clarityeda.netlify.app](https://clarityeda.netlify.app/)** 
+
 
 ---
 
@@ -94,7 +94,7 @@ Every chart, table and figure derives from **one** cleaned DataFrame built once 
 
 ### Clarity — Web App
 
-**Built by Naishadh Vytla and team beyond the MUC01 scope.**
+**Built by Naishadh Vytla and team for MUC01 scope.**
 
 A general-purpose EDA platform with the workflow:
 
@@ -113,6 +113,8 @@ A general-purpose EDA platform with the workflow:
 * Supports files up to roughly **50–100 MB** in-browser
 
 **Link:** [Clarity EDA](https://clarityeda.netlify.app/?utm_source=chatgpt.com)
+
+
 
 
 ## Future work
