@@ -4,7 +4,7 @@
 
 Six months of retail transaction data turned into a supplier-review decision — plus **Clarity**, a live web app that runs the same cleaning-and-EDA workflow on any dataset.
 
-**Live app → [clarityeda.netlify.app](https://clarityeda.netlify.app/)** — built by **Naishadh Vytla** as an extension beyond the assigned scope.
+**Live app → [clarityeda.netlify.app](https://clarityeda.netlify.app/)** 
 
 ---
 
